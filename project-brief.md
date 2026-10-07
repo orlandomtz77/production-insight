@@ -187,12 +187,16 @@ date + line + shift
 
 Allowed categories:
 
-- Machine failure
-- Material shortage
-- Quality issue
-- Setup / Changeover
-- Maintenance
-- Other
+Values are in **Spanish**, as captured by supervisors:
+
+| Value | Meaning |
+|---|---|
+| Falla de máquina | Machine failure |
+| Falta de material | Material shortage |
+| Problema de calidad | Quality issue |
+| Ajuste / Cambio de modelo | Setup / changeover |
+| Mantenimiento | Maintenance |
+| Otro | Other |
 
 Downtime events are linked to production records through:
 
@@ -204,7 +208,7 @@ date + line + shift + product
 
 Each downtime event records the product that was running when the downtime occurred.
 
-For **Setup / Changeover** events, the downtime is attributed to the **incoming product** (the product being set up).
+For **Ajuste / Cambio de modelo** (setup / changeover) events, the downtime is attributed to the **incoming product** (the product being set up).
 
 See `docs/decisions/ADR-001-downtime-events-table.md`.
 
@@ -566,9 +570,9 @@ The MVP will be considered successful when all of the following conditions are m
 - A production record represents one date + line + shift + product combination.
 - A line may run more than one product in the same shift (product changeovers are in scope).
 - A shift may contain multiple downtime events.
-- Downtime reasons come from a controlled category list: Machine failure, Material shortage, Quality issue, Setup / Changeover, Maintenance, Other.
+- Downtime reasons come from a controlled category list, in Spanish: `Falla de máquina`, `Falta de material`, `Problema de calidad`, `Ajuste / Cambio de modelo`, `Mantenimiento`, `Otro`.
 - Each downtime event records the product running when it occurred.
-- Setup / Changeover downtime is attributed to the incoming product.
+- `Ajuste / Cambio de modelo` downtime is attributed to the incoming product.
 - Lines and products come from fixed master lists (`data/master/`).
 - Regular working days are Monday to Saturday; Sunday is worked only as overtime.
 - Downtime is calculated from individual downtime events.

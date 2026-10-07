@@ -20,9 +20,9 @@
 | REQ-009 | Calculate Downtime KPIs | Defined |
 | REQ-010 | Calculate Baselines | Defined |
 | REQ-011 | Detect Deviations | Defined |
-| REQ-012 | Generate Explainable Alerts | Pending |
-| REQ-013 | Calculate Priority Scores | Pending |
-| REQ-014 | Display Dashboard | Pending |
+| REQ-012 | Generate Explainable Alerts | Defined |
+| REQ-013 | Calculate Priority Scores | Defined |
+| REQ-014 | Display Dashboard | Defined |
 
 Merged IDs are kept (not reused) so references stay stable.
 
@@ -39,6 +39,16 @@ These decisions apply to all data ingestion requirements.
 | Reloading existing data | Replace, by shift |
 | Error detail | Shown after the upload and downloadable as CSV; not stored in the database |
 | Load history | Each upload's summary is stored in the database (see REQ-005) |
+
+### Language Decision
+
+Decided 2026-10-07.
+
+| Element | Language |
+|---|---|
+| Documentation (requirements, ADRs, README) | English |
+| Source code (names, comments) | English |
+| Dashboard, messages, alerts, error detail shown to the user | **Spanish** |
 
 Details: `docs/decisions/ADR-002-reload-strategy.md`.
 
@@ -59,6 +69,7 @@ data/master/
 - Adding a new line or product means adding a row to the corresponding file.
 - If a master list file is missing or empty, the upload is rejected with a clear message.
 - The MVP does not validate which products can run on which lines.
+- Values are stored as captured by supervisors, in **Spanish** (e.g., `Falla de máquina`), and shown in the dashboard as stored.
 
 ### Replacement Unit: the Shift
 
@@ -543,7 +554,7 @@ Average = 80 / 4 = 20 min per shift      ← used
 Average of shifts with downtime = 40     ← not used
 ```
 
-Setup / Changeover downtime is attributed to the incoming product (ADR-001).
+`Ajuste / Cambio de modelo` (setup / changeover) downtime is attributed to the incoming product (ADR-001).
 
 ### Output
 
@@ -756,3 +767,302 @@ These records are the input for explainable alerts (REQ-012) and prioritization 
 
 - **Threshold value:** 2 standard deviations is the starting point. It will be reviewed with the sample dataset (too many or too few alerts).
 - **Evaluating past days:** the MVP evaluates only the last working day. Reviewing alerts for earlier dates may be evaluated later.
+
+---
+
+## REQ-012: Generate Explainable Alerts
+
+### Problem
+
+A detected deviation (REQ-011) is a set of numbers. The supervisor needs a message that explains, in plain language, what happened, how much it deviated, what it was compared against, why it matters, and where to start looking.
+
+### Input
+
+- Detected deviations (REQ-011).
+- Production records and downtime events of the evaluated day, to identify the investigation area.
+
+### Process
+
+Each deviation becomes one alert with these parts (`CLAUDE.md` §12):
+
+| Part | Content |
+|---|---|
+| What happened | Line, metric, date and current value |
+| How much it deviated | Percent deviation and number of standard deviations |
+| Compared against | Baseline mean, number of days and period used |
+| Why it matters | Estimated impact in pieces (REQ-013) |
+| Where to investigate | The detail of the evaluated day that contributes most to the deviation |
+
+#### Investigation Area
+
+| Metric | Investigation area shown |
+|---|---|
+| Production per shift | Shift with the lowest production, and the main downtime cause of the line that day |
+| Scrap rate | Product with the highest scrap rate on that line that day |
+| Downtime per shift | Downtime cause with the most minutes on that line that day, and its shift |
+
+The investigation area points to **where to look**, not to the root cause.
+
+#### Message Template (example)
+
+```text
+L2 — Scrap rate above normal (2026-09-30)
+
+Current value:    8.7%
+Baseline:         3.2% (average of 24 working days, 2026-09-01 to 2026-09-29)
+Deviation:        +171.8% (6.1 standard deviations)
+Impact:           ~138 extra scrap pieces
+Recurrence:       3 of the last 6 working days
+
+Where to investigate: Product B on L2 — scrap rate 12.4% that day.
+```
+
+### Output
+
+A list of alerts, each with the parts above, ready to be displayed in the dashboard (REQ-014) and ranked by priority (REQ-013).
+
+### Acceptance Criteria
+
+```text
+[ ] Every deviation from REQ-011 produces exactly one alert.
+[ ] Every alert shows what happened, current value, baseline, deviation, sample size, impact and recurrence.
+[ ] Every alert states the period and number of days used as baseline.
+[ ] Every alert shows an investigation area according to its metric.
+[ ] Messages contain no internal codes or variable names (e.g., "scrap rate", not "scrap_rate").
+[ ] The alert for each injected anomaly in the sample dataset points to the injected line, product or cause.
+```
+
+### Dependencies
+
+- REQ-011 (deviations).
+- REQ-013 (impact and recurrence values).
+
+### Open Points
+
+- **Language:** alert messages are shown in **Spanish** (see Language Decision). The template above is written in English as documentation; the implemented text will be in Spanish.
+
+---
+
+## REQ-013: Calculate Priority Scores
+
+### Problem
+
+When there are several alerts, the supervisor needs to know which one to investigate first. Alerts measure different things (pieces, %, minutes), so they cannot be compared directly.
+
+### Input
+
+- Detected deviations (REQ-011) and their baselines (REQ-010).
+- Daily values of the last 6 working days for each line.
+
+### Process
+
+```text
+Priority Score = Impact × Deviation × Frequency
+```
+
+Decided 2026-10-07: **Impact** is measured in **lost pieces**, and **Frequency** over the **last 6 working days**.
+
+#### Impact (lost pieces on the evaluated day)
+
+All metrics are converted to pieces so they can be compared:
+
+| Metric | Impact formula |
+|---|---|
+| Production per shift | `(baseline_mean − value) × shifts_worked` |
+| Scrap rate | `(value − baseline_mean) × production_quantity of the day` |
+| Downtime per shift | `(value − baseline_mean) × shifts_worked × line_rate` |
+
+```text
+line_rate (pieces per minute) =
+    baseline mean production per shift
+  / (480 − baseline mean downtime per shift)
+```
+
+`line_rate` is calculated from the line's own baseline, so no new data (e.g., standard rates per product) is required.
+
+Example:
+
+```text
+L1: baseline 1,200 pieces/shift, baseline downtime 40 min/shift
+line_rate = 1,200 / (480 − 40) = 2.73 pieces/min
+
+Evaluated day: 95 min/shift, 3 shifts worked
+Impact = (95 − 40) × 3 × 2.73 ≈ 450 pieces
+```
+
+#### Deviation
+
+`|z|` from REQ-011 (number of standard deviations from the baseline mean).
+
+#### Frequency
+
+Number of days, among the **last 6 working days** (Monday–Saturday, including the evaluated day), on which the same line and metric was beyond the alert threshold, using the same baseline (mean and std) as the evaluated day.
+
+Value from 1 (only the evaluated day) to 6 (every day of the last week).
+
+#### Ranking
+
+- Alerts are sorted by Priority Score, highest first.
+- The position (1, 2, 3...) is shown, together with the three components (impact, deviation, frequency), so the user can see **why** an alert ranks higher.
+- The score itself has no unit; it is only used to sort.
+
+### Output
+
+Each alert from REQ-012 gets: impact (pieces), deviation (|z|), frequency (1–6), priority score and rank.
+
+### Acceptance Criteria
+
+```text
+[ ] Impact is calculated in pieces for all three metrics, using the formulas above.
+[ ] line_rate is calculated from the line's baseline.
+[ ] A test case like the L1 example returns ≈ 450 pieces.
+[ ] Frequency counts the last 6 working days, including the evaluated day, with values from 1 to 6.
+[ ] Alerts are sorted by priority score, highest first.
+[ ] Each alert shows rank, impact, deviation and frequency.
+[ ] The dashboard states that the score is a decision-support tool, not an absolute measure of importance.
+[ ] In the sample dataset, an injected recurring anomaly ranks above an injected one-day anomaly of similar impact.
+```
+
+### Dependencies
+
+- REQ-010 (baselines), REQ-011 (deviations), REQ-012 (alerts).
+
+### Known Limitations
+
+- **Overlap between metrics:** a long downtime also reduces production, so the same event may raise a downtime alert and a production alert. Both are shown; the investigation area of each helps relate them.
+- **Deviation counted twice:** impact already grows with the deviation, and `|z|` multiplies it again. This favors large deviations; it is accepted for the MVP and will be reviewed with the sample dataset.
+- **Recent days in the baseline:** the 5 previous days used for frequency are also part of the baseline. A long recurring problem raises the baseline and may reduce its own frequency. Accepted for the MVP.
+- **Pieces are not money:** a lost piece of a cheap product weighs the same as one of an expensive product. Cost per product may be added after the MVP.
+
+---
+
+## REQ-014: Display Dashboard
+
+### Problem
+
+The supervisor needs a single place to load data, check its quality, review KPIs and see which problems to investigate first, without technical knowledge and without manual calculations.
+
+### Input
+
+Results of REQ-001 to REQ-013.
+
+### Process
+
+A single Streamlit application, in **Spanish**.
+
+#### Layout
+
+**Sidebar:**
+
+1. Upload: production CSV button, then downtime CSV button (in that order, as required by REQ-002).
+2. Filters: period (date range), line, product, shift. Default: all data.
+
+**Main area — tabs:**
+
+```text
+Resumen | Alertas | Producción | Calidad | Paros | Calidad de datos
+```
+
+`Alertas` is placed second because it answers the main question of the project: **where to investigate first**.
+
+#### Filters and Alerts
+
+- KPI tabs (Resumen, Producción, Calidad, Paros) respond to all filters.
+- Alerts always evaluate the **last working day** (REQ-011); the period filter does not change them. The line filter does: it shows only alerts for the selected lines.
+- Each tab shows the active filters at the top.
+
+#### Content: Every Visualization Answers a Question
+
+Per `CLAUDE.md` §15, each element is listed with the question it answers.
+
+**Resumen**
+
+| Element | Question it answers |
+|---|---|
+| Cards: total production, scrap rate, total downtime, number of alerts | How did the operation go overall? |
+| Evaluated day and top-priority alert | What is the most important problem right now? |
+
+**Alertas**
+
+| Element | Question it answers |
+|---|---|
+| Ranked table: rank, line, problem, current value, baseline, deviation, impact (pieces), recurrence | Which problem should I investigate first? |
+| Expandable detail with the full explanation (REQ-012) | Why was this flagged, and where do I start? |
+| Lines/metrics not evaluated, with reason | Is anything missing from the evaluation? |
+| Note: the score is decision support, not absolute truth | How much should I trust the ranking? |
+
+**Producción**
+
+| Element | Question it answers |
+|---|---|
+| Bar chart: production by line, with shifts worked | Which line produced the most / least? |
+| Bar chart: production by product | Which products concentrate the volume? |
+| Bar chart: production by shift | Is there a shift with lower output? |
+
+**Calidad**
+
+| Element | Question it answers |
+|---|---|
+| Bar chart: scrap rate by line (with scrap quantity) | Which line has the highest scrap rate? |
+| Bar chart: scrap rate by product | Which product has the highest scrap rate? |
+| Bar chart: scrap rate by shift | Is scrap concentrated in a shift? |
+| Line chart: daily scrap rate per line | Is the problem recurring or getting worse? |
+
+**Paros**
+
+| Element | Question it answers |
+|---|---|
+| Bar chart: downtime by line | Which line had the most downtime? |
+| Sorted bar chart (Pareto): downtime by cause, with % of total | What are the main downtime causes? |
+| Bar chart: downtime by shift and by product | Is downtime concentrated in a shift or product? |
+| Line chart: daily downtime per shift worked, per line | Is downtime increasing? |
+
+**Calidad de datos**
+
+| Element | Question it answers |
+|---|---|
+| Coverage, missing shifts, Sunday overtime shifts (REQ-005) | Can I trust the KPIs? Is data missing? |
+| Orphan downtime events (REQ-005) | Is there downtime not linked to production? |
+| Load history (REQ-005) | What was loaded, when, and with what result? |
+
+#### Display Rules
+
+- Number format as defined in KPI Common Rules (e.g., `12,450`, `3.2%`, `1,230 min (20.5 h)`).
+- Bar charts sorted from highest to lowest unless the dimension has a natural order (shift 1, 2, 3; dates).
+- Charts use Plotly (interactive tooltips with the exact value).
+- No chart is added without a question in the tables above.
+
+#### Empty and Error States
+
+- Empty database: a message explaining to load the production CSV first, then the downtime CSV.
+- No data for the selected filters: a "no data for these filters" message, not an empty chart or an error.
+- No alerts: a message stating that no line deviated on the evaluated day, plus the list of lines not evaluated.
+
+### Output
+
+A Streamlit dashboard, started with:
+
+```text
+streamlit run app.py
+```
+
+### Acceptance Criteria
+
+```text
+[ ] The dashboard starts with streamlit run app.py.
+[ ] All text visible to the user is in Spanish.
+[ ] Production and downtime CSVs can be uploaded from the sidebar, and the load summary and error detail are shown.
+[ ] Filters (period, line, product, shift) update the KPI tabs.
+[ ] Alerts are ranked, show all fields, and respond to the line filter but not to the period filter.
+[ ] Every element listed in this requirement is present, and no element without a question is added.
+[ ] Empty database, no data for filters, and no alerts each show a clear message instead of an error.
+[ ] A non-technical user can identify the top-priority problem and where to investigate from the Resumen and Alertas tabs, without opening the raw data.
+```
+
+### Dependencies
+
+- REQ-001 to REQ-013.
+
+### Open Points
+
+- **Master list values:** resolved — master lists contain the values as captured by supervisors, in Spanish (e.g., `Falla de máquina`). They are shown in the dashboard as stored.

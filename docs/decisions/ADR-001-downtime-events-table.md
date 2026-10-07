@@ -28,8 +28,8 @@ Option 3.
 
 - Downtime is stored as individual events in a separate table.
 - Each event records `date`, `line`, `shift`, `product`, `downtime_minutes` and `downtime_reason`.
-- `downtime_reason` must belong to a controlled list: Machine failure, Material shortage, Quality issue, Setup / Changeover, Maintenance, Other.
-- **Setup / Changeover** downtime is attributed to the **incoming product**.
+- `downtime_reason` must belong to a controlled list (values in Spanish, as captured by supervisors): `Falla de máquina`, `Falta de material`, `Problema de calidad`, `Ajuste / Cambio de modelo`, `Mantenimiento`, `Otro`.
+- **`Ajuste / Cambio de modelo`** (setup / changeover) downtime is attributed to the **incoming product**.
 - Total downtime is never stored in the production record; it is calculated as `SUM(downtime_minutes)`.
 
 ## Reason

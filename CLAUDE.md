@@ -296,17 +296,17 @@ Zero or more events per production record, linked by `date + line + shift + prod
 - downtime_minutes
 - downtime_reason
 
-`downtime_reason` must be one of: Machine failure, Material shortage, Quality issue, Setup / Changeover, Maintenance, Other.
+`downtime_reason` must be one of: `Falla de máquina`, `Falta de material`, `Problema de calidad`, `Ajuste / Cambio de modelo`, `Mantenimiento`, `Otro` (values in Spanish, as captured by supervisors).
 
-Setup / Changeover downtime is attributed to the incoming product.
+`Ajuste / Cambio de modelo` (setup / changeover) downtime is attributed to the incoming product.
 
 Example:
 
 ```text
 date        line    shift   product      minutes   reason
-2026-10-01  L1      1       Product A    20        Machine failure
-2026-10-01  L1      1       Product B    15        Setup / Changeover
-2026-10-01  L2      2       Product B    87        Material shortage
+2026-10-01  L1      1       Product A    20        Falla de máquina
+2026-10-01  L1      1       Product B    15        Ajuste / Cambio de modelo
+2026-10-01  L2      2       Product B    87        Falta de material
 ```
 
 Total downtime is calculated as `SUM(downtime_minutes)`; it is not stored in the production record.
