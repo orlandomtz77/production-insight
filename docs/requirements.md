@@ -18,8 +18,8 @@
 | REQ-007 | Calculate Production KPIs | Defined |
 | REQ-008 | Calculate Quality KPIs | Defined |
 | REQ-009 | Calculate Downtime KPIs | Defined |
-| REQ-010 | Calculate Baselines | Pending |
-| REQ-011 | Detect Deviations | Pending |
+| REQ-010 | Calculate Baselines | Defined |
+| REQ-011 | Detect Deviations | Defined |
 | REQ-012 | Generate Explainable Alerts | Pending |
 | REQ-013 | Calculate Priority Scores | Pending |
 | REQ-014 | Display Dashboard | Pending |
@@ -376,8 +376,8 @@ Each section can be expanded to see the detail (list of orphan events, list of m
 ### Open Points
 
 - **Holidays and planned stops:** holidays (Monday–Saturday) and lines not running a given shift still appear as gaps. A holiday calendar is out of scope for the MVP.
-- **Effect on baselines:** whether gaps should block or warn on KPI and baseline calculations will be defined in REQ-010.
-- **Sunday overtime in baselines:** overtime shifts may behave differently (smaller crew, different products). Whether they are included in baselines will be defined in REQ-010.
+- **Effect on baselines:** resolved in REQ-010 — daily values are normalized per shift worked, so gaps do not distort baselines.
+- **Sunday overtime in baselines:** resolved in REQ-010 — Sundays are excluded from baselines and from alert evaluation.
 
 ---
 
@@ -566,3 +566,193 @@ Values for each KPI. Downtime by cause includes minutes, number of events and % 
 - REQ-001 (production records, shifts worked).
 - REQ-002 (downtime events).
 - REQ-005 (orphan detection).
+
+---
+
+## Detection Decisions
+
+Decided 2026-10-07. These apply to REQ-010 and REQ-011.
+
+| Decision | Choice |
+|---|---|
+| Compared against | The **same line's own history** (not other lines) |
+| Period evaluated | The **last working day** with data |
+| Alert threshold | More than **2 standard deviations** from the baseline mean, in the unfavorable direction |
+
+Comparing a line against other lines ("which line is worst") is already answered by the KPIs (REQ-007 to REQ-009). Detection answers a different question: **"did something change?"**
+
+---
+
+## REQ-010: Calculate Baselines
+
+### Problem
+
+To decide whether a value is abnormal, the system needs a reference of what is normal for each line. Without a defined baseline, an alert cannot explain what it was compared against.
+
+### Input
+
+- Production records and downtime events (excluding orphans).
+- The evaluated day (see REQ-011).
+
+### Process
+
+#### Metrics
+
+A baseline is calculated per **line** for three daily metrics:
+
+| Metric | Daily value per line | Unfavorable direction |
+|---|---|---|
+| Production per shift | `SUM(production_quantity) / shifts worked` | Lower |
+| Scrap rate | `SUM(scrap_quantity) / SUM(production_quantity)` | Higher |
+| Downtime per shift | `SUM(downtime_minutes) / shifts worked` | Higher |
+
+Values are normalized **per shift worked** so that a day with a missing shift (coverage gap, REQ-005) does not look like a production drop or a downtime improvement.
+
+#### Baseline Days
+
+The baseline of a line uses its **previous days**, with these rules:
+
+- Only days **before** the evaluated day (the evaluated day is never part of its own baseline).
+- Only **Monday to Saturday**. Sunday overtime is excluded because it usually runs with different crews, products or number of shifts.
+- Only days where the line has at least one shift worked.
+- For scrap rate, days with total production = 0 are excluded (rate undefined).
+
+#### Statistics
+
+For each line and metric:
+
+```text
+mean       = average of the daily values in the baseline days
+std        = sample standard deviation of the daily values (n − 1)
+n          = number of baseline days
+```
+
+#### Minimum History
+
+- A baseline requires **at least 10 days** (`n ≥ 10`).
+- If `n < 10`, the baseline is marked **"insufficient history"** and no alert is generated for that line and metric.
+- If `std = 0` (all baseline days identical), the baseline is marked **"no variation"** and no alert is generated.
+
+With one month of data (≈ 25 working days), every line that runs regularly has enough history.
+
+### Output
+
+One baseline per line and metric:
+
+```text
+line   metric          mean    std    n    status
+L2     scrap_rate      3.2%    0.9%   24   ok
+L3     downtime/shift  41      12     8    insufficient history
+```
+
+### Acceptance Criteria
+
+```text
+[ ] Baselines are calculated per line for production per shift, scrap rate and downtime per shift.
+[ ] The evaluated day is excluded from its own baseline.
+[ ] Sundays are excluded from baselines.
+[ ] Daily values are normalized per shift worked; a day with a missing shift does not distort the baseline.
+[ ] Scrap rate baselines exclude days with total production = 0.
+[ ] Standard deviation is the sample standard deviation (n − 1).
+[ ] With fewer than 10 baseline days, the status is "insufficient history".
+[ ] With std = 0, the status is "no variation".
+[ ] Mean, std and n match a manual calculation on the sample dataset.
+```
+
+### Dependencies
+
+- REQ-001, REQ-002 (data).
+- REQ-005 (orphan exclusion, working calendar).
+- REQ-007 to REQ-009 (metric definitions).
+
+### Open Points
+
+- **Baselines per product or per line + shift:** not included in the MVP. Products do not run every day, so their daily history is sparse. May be evaluated after the MVP.
+
+---
+
+## REQ-011: Detect Deviations
+
+### Problem
+
+The supervisor needs the system to point out which lines had abnormal behavior on the last working day, instead of reviewing every KPI manually.
+
+### Input
+
+- Baselines (REQ-010).
+- Daily values of the evaluated day.
+
+### Process
+
+#### Evaluated Day
+
+The **last Monday–Saturday date** with production data.
+
+If the last date with data is a Sunday (overtime), the evaluated day is the Saturday before it. Sunday overtime is visible in the KPIs but is not evaluated for alerts in the MVP.
+
+#### Deviation Calculation
+
+For each line and metric with a baseline status `ok`:
+
+```text
+z = (value − mean) / std
+percent_deviation = (value − mean) / mean × 100
+```
+
+#### Alert Rule
+
+A deviation is detected when it is **more than 2 standard deviations in the unfavorable direction**:
+
+| Metric | Condition |
+|---|---|
+| Production per shift | `z < −2` |
+| Scrap rate | `z > 2` |
+| Downtime per shift | `z > 2` |
+
+Favorable deviations (e.g., unusually low scrap) do not generate alerts.
+
+The threshold (2) is defined as a single named constant so it can be adjusted and documented.
+
+If the line has no production on the evaluated day, no deviation is calculated for it; the missing shifts appear in the coverage report (REQ-005).
+
+### Output
+
+One record per detected deviation:
+
+| Field | Example |
+|---|---|
+| date | 2026-09-30 |
+| line | L2 |
+| metric | scrap_rate |
+| value | 8.7% |
+| baseline_mean | 3.2% |
+| baseline_std | 0.9% |
+| sample_size | 24 days |
+| z | +6.1 |
+| percent_deviation | +171.8% |
+| shifts_worked | 3 |
+
+Lines and metrics without a valid baseline are listed separately with their status ("insufficient history", "no variation"), so the user knows they were not evaluated.
+
+These records are the input for explainable alerts (REQ-012) and prioritization (REQ-013).
+
+### Acceptance Criteria
+
+```text
+[ ] The evaluated day is the last Monday–Saturday date with production data.
+[ ] Each injected anomaly in the sample dataset (on the evaluated day) is detected.
+[ ] A normal day in the sample dataset generates no deviations.
+[ ] Only unfavorable deviations beyond 2 standard deviations are detected.
+[ ] Each deviation includes value, mean, std, sample size, z and percent deviation.
+[ ] Lines and metrics without a valid baseline are listed as not evaluated, with the reason.
+[ ] A line with no production on the evaluated day does not produce an error.
+```
+
+### Dependencies
+
+- REQ-010 (baselines).
+
+### Open Points
+
+- **Threshold value:** 2 standard deviations is the starting point. It will be reviewed with the sample dataset (too many or too few alerts).
+- **Evaluating past days:** the MVP evaluates only the last working day. Reviewing alerts for earlier dates may be evaluated later.
