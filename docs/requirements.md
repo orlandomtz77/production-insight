@@ -5,6 +5,29 @@
 
 ---
 
+## Index
+
+| ID | Name | Status |
+|---|---|---|
+| REQ-001 | Upload Production CSV | Defined |
+| REQ-002 | Upload Downtime CSV | Defined |
+| REQ-003 | Validate Production Records | Merged into REQ-001 |
+| REQ-004 | Validate Downtime Records | Merged into REQ-002 |
+| REQ-005 | Data Quality Report | Defined |
+| REQ-006 | Store Valid Records | Merged into REQ-001 / REQ-002 |
+| REQ-007 | Calculate Production KPIs | Pending |
+| REQ-008 | Calculate Quality KPIs | Pending |
+| REQ-009 | Calculate Downtime KPIs | Pending |
+| REQ-010 | Calculate Baselines | Pending |
+| REQ-011 | Detect Deviations | Pending |
+| REQ-012 | Generate Explainable Alerts | Pending |
+| REQ-013 | Calculate Priority Scores | Pending |
+| REQ-014 | Display Dashboard | Pending |
+
+Merged IDs are kept (not reused) so references stay stable.
+
+---
+
 ## Cross-Cutting Decisions
 
 These decisions apply to all data ingestion requirements.
@@ -14,6 +37,8 @@ These decisions apply to all data ingestion requirements.
 | Upload method | File upload button in Streamlit |
 | File with errors | Store valid records; report invalid records |
 | Reloading existing data | Replace, by shift |
+| Error detail | Shown after the upload and downloadable as CSV; not stored in the database |
+| Load history | Each upload's summary is stored in the database (see REQ-005) |
 
 Details: `docs/decisions/ADR-002-reload-strategy.md`.
 
@@ -239,3 +264,117 @@ Row   Column            Value               Reason
 ### Open Points
 
 - **Shift without downtime:** a shift with zero downtime simply has no rows in the file. Because replacement only touches shifts present in the file, the MVP cannot "clear" the downtime events of a shift by uploading a file. This is accepted for the MVP.
+
+---
+
+## REQ-005: Data Quality Report
+
+### Problem
+
+Upload summaries (REQ-001, REQ-002) show what happened in a single upload, but not the overall state of the data. Before trusting KPIs and alerts, the supervisor needs to know:
+
+- Whether there are downtime events without a production record.
+- Whether there are missing dates, lines or shifts that could distort averages and baselines.
+- What was loaded, when, and with what result.
+
+### Input
+
+Data already stored in the database:
+
+- Production records
+- Downtime events
+- Load history
+- Master lists (`data/master/`)
+
+### Process
+
+The report is calculated from the database every time the user opens it. It has three sections.
+
+#### 1. Orphan Downtime Events
+
+Downtime events whose `date + line + shift + product` has no production record.
+
+They can appear when a production shift is replaced and a product is removed (see REQ-001, Open Points).
+
+#### 2. Coverage Gaps
+
+Production records expected but not found.
+
+```text
+Period   = from the earliest to the latest date with production records
+Expected = every Monday–Saturday in the period × every line in lines.csv × shifts 1, 2, 3
+Gap      = expected date + line + shift with no production record
+```
+
+**Working calendar:**
+
+- Monday to Saturday are regular working days and are expected to have data.
+- Sunday is not a regular working day and **never generates gaps**.
+- **Sunday overtime:** production and downtime on a Sunday are accepted and stored like any other day. They are counted in KPIs and shown in the coverage report as "overtime shifts". No configuration is needed: Sunday overtime is detected from the data itself.
+
+Gaps are shown as **"missing data"**, not as errors: a gap may still be planned (e.g., a holiday).
+
+#### 3. Load History
+
+A record of every upload, stored in the database when the upload finishes:
+
+| Field | Description |
+|---|---|
+| loaded_at | Date and time of the upload |
+| file_type | `production` or `downtime` |
+| file_name | Name of the uploaded file |
+| rows_read | Rows in the file |
+| rows_stored | Rows stored |
+| rows_rejected | Rows rejected |
+| shifts_replaced | Existing shifts replaced |
+| shifts_new | New shifts stored |
+| shifts_rejected | Shifts rejected |
+| warnings | Number of warnings |
+| status | `completed` or `rejected` (whole file rejected) |
+
+Uploads rejected at file level (e.g., missing columns) are also recorded, with `status = rejected`.
+
+Error detail per row is **not** stored (see Cross-Cutting Decisions).
+
+### Output
+
+A **Data Quality** section in the dashboard:
+
+```text
+Data Quality — Period 2026-09-01 to 2026-09-30
+
+Orphan downtime events:   3   (45 min)
+Coverage:                 232 / 234 shifts with data (99.1%)   (Mon–Sat)
+Missing shifts:           2
+Sunday overtime shifts:   4
+Last upload:              2026-10-07 09:14 — downtime — completed
+```
+
+Each section can be expanded to see the detail (list of orphan events, list of missing shifts, full load history).
+
+### Acceptance Criteria
+
+```text
+[ ] Orphan downtime events are listed with date, line, shift, product, minutes and reason.
+[ ] Coverage shows expected shifts, shifts with data, percentage, and the list of missing shifts.
+[ ] The coverage period is calculated from the stored production data.
+[ ] Missing shifts are labeled as "missing data", not as errors.
+[ ] Only Monday–Saturday shifts are expected; a Sunday without data never appears as a gap.
+[ ] Sunday shifts with data are accepted and listed as overtime shifts.
+[ ] Every upload (completed or rejected) creates a load history record.
+[ ] The load history is shown from newest to oldest.
+[ ] With an empty database, the report shows a clear "no data loaded" message instead of failing.
+[ ] Results match a manual check on the sample dataset (known orphans and known gaps).
+```
+
+### Dependencies
+
+- REQ-001 and REQ-002 (data and load summaries).
+- Master list `data/master/lines.csv`.
+- Database table for load history.
+
+### Open Points
+
+- **Holidays and planned stops:** holidays (Monday–Saturday) and lines not running a given shift still appear as gaps. A holiday calendar is out of scope for the MVP.
+- **Effect on baselines:** whether gaps should block or warn on KPI and baseline calculations will be defined in REQ-010.
+- **Sunday overtime in baselines:** overtime shifts may behave differently (smaller crew, different products). Whether they are included in baselines will be defined in REQ-010.

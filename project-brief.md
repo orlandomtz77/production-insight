@@ -570,6 +570,7 @@ The MVP will be considered successful when all of the following conditions are m
 - Each downtime event records the product running when it occurred.
 - Setup / Changeover downtime is attributed to the incoming product.
 - Lines and products come from fixed master lists (`data/master/`).
+- Regular working days are Monday to Saturday; Sunday is worked only as overtime.
 - Downtime is calculated from individual downtime events.
 - Total downtime for a date + line + shift must not exceed 480 minutes.
 - The initial dataset covers one month.
