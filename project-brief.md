@@ -569,6 +569,7 @@ The MVP will be considered successful when all of the following conditions are m
 - Downtime reasons come from a controlled category list: Machine failure, Material shortage, Quality issue, Setup / Changeover, Maintenance, Other.
 - Each downtime event records the product running when it occurred.
 - Setup / Changeover downtime is attributed to the incoming product.
+- Lines and products come from fixed master lists (`data/master/`).
 - Downtime is calculated from individual downtime events.
 - Total downtime for a date + line + shift must not exceed 480 minutes.
 - The initial dataset covers one month.
