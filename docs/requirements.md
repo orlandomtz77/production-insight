@@ -15,9 +15,9 @@
 | REQ-004 | Validate Downtime Records | Merged into REQ-002 |
 | REQ-005 | Data Quality Report | Defined |
 | REQ-006 | Store Valid Records | Merged into REQ-001 / REQ-002 |
-| REQ-007 | Calculate Production KPIs | Pending |
-| REQ-008 | Calculate Quality KPIs | Pending |
-| REQ-009 | Calculate Downtime KPIs | Pending |
+| REQ-007 | Calculate Production KPIs | Defined |
+| REQ-008 | Calculate Quality KPIs | Defined |
+| REQ-009 | Calculate Downtime KPIs | Defined |
 | REQ-010 | Calculate Baselines | Pending |
 | REQ-011 | Detect Deviations | Pending |
 | REQ-012 | Generate Explainable Alerts | Pending |
@@ -378,3 +378,191 @@ Each section can be expanded to see the detail (list of orphan events, list of m
 - **Holidays and planned stops:** holidays (Monday–Saturday) and lines not running a given shift still appear as gaps. A holiday calendar is out of scope for the MVP.
 - **Effect on baselines:** whether gaps should block or warn on KPI and baseline calculations will be defined in REQ-010.
 - **Sunday overtime in baselines:** overtime shifts may behave differently (smaller crew, different products). Whether they are included in baselines will be defined in REQ-010.
+
+---
+
+## KPI Common Rules
+
+These rules apply to REQ-007, REQ-008 and REQ-009.
+
+### Scope of Calculation
+
+- KPIs are calculated over the data matching the active filters: **period**, **line**, **product** and **shift**. Without filters, all stored data is used.
+- Filters are displayed in the dashboard (REQ-014); KPI calculations must accept them as inputs.
+- Sunday overtime shifts are included like any other shift.
+- **Orphan downtime events are excluded** from KPIs, because they have no production record to relate to. The dashboard shows how many were excluded (see REQ-005).
+
+### Definitions
+
+| Term | Definition |
+|---|---|
+| Production record | One row: `date + line + shift + product` |
+| Shift worked | One distinct `date + line + shift` with at least one production record |
+| Ratio of totals | A rate is always calculated as `SUM(numerator) / SUM(denominator)` over the group, never as an average of individual rates |
+
+### Display
+
+- Quantities: whole units, with thousands separator (e.g., `12,450`).
+- Rates: percentage with one decimal (e.g., `3.2%`).
+- Minutes: whole minutes; hours shown in parentheses when ≥ 60 (e.g., `1,230 min (20.5 h)`).
+- When a rate cannot be calculated (denominator = 0), show `N/A`, never `0%` or an error.
+
+---
+
+## REQ-007: Calculate Production KPIs
+
+### Problem
+
+The supervisor needs to know how much was produced and which lines, products and shifts produced more or less, to detect low output.
+
+### Input
+
+Production records in the database, filtered by the active filters.
+
+### Process
+
+| KPI | Formula |
+|---|---|
+| Total production | `SUM(production_quantity)` |
+| Average production per shift | `Total production / number of shifts worked` |
+| Production by line | Total production grouped by `line` |
+| Production by product | Total production grouped by `product` |
+| Production by shift | Total production grouped by `shift` (1, 2, 3) |
+
+Each grouped KPI also shows the number of shifts worked in the group, so groups with different activity can be compared (e.g., `L1: 24,500 units in 26 shifts`).
+
+### Output
+
+Values for each KPI, ready to be displayed in the dashboard.
+
+### Acceptance Criteria
+
+```text
+[ ] Total production matches a manual sum on the sample dataset.
+[ ] Average production per shift uses distinct date + line + shift, not number of rows (a shift with two products counts once).
+[ ] Production by line, product and shift matches manual calculations.
+[ ] Each grouped KPI shows the number of shifts worked.
+[ ] KPIs respond to period, line, product and shift filters.
+[ ] With no data for the filters, KPIs show a "no data" message instead of failing.
+```
+
+### Dependencies
+
+- REQ-001 (production records).
+
+---
+
+## REQ-008: Calculate Quality KPIs
+
+### Problem
+
+The supervisor needs to know how much scrap was generated, the scrap rate, and which lines, products and shifts have the highest scrap rate, to decide where to investigate quality issues.
+
+### Input
+
+Production records in the database, filtered by the active filters.
+
+### Process
+
+| KPI | Formula |
+|---|---|
+| Total scrap quantity | `SUM(scrap_quantity)` |
+| Scrap rate | `SUM(scrap_quantity) / SUM(production_quantity)` |
+| Scrap by line | Scrap quantity and scrap rate grouped by `line` |
+| Scrap by product | Scrap quantity and scrap rate grouped by `product` |
+| Scrap by shift | Scrap quantity and scrap rate grouped by `shift` |
+
+**Ratio of totals** (decided 2026-10-07): the scrap rate of a group is total scrap divided by total production, so each shift weighs according to what it produced.
+
+Example:
+
+```text
+Shift A: production 1,000, scrap 10   (1.0%)
+Shift B: production    10, scrap  5   (50.0%)
+
+Scrap rate = 15 / 1,010 = 1.5%     ← used
+Average of rates = 25.5%           ← not used
+```
+
+Records with `production_quantity = 0` add nothing to the numerator or denominator, so they do not affect the rate.
+
+If a group has total production = 0, its scrap rate is `N/A`.
+
+### Output
+
+Values for each KPI. Grouped results include both scrap quantity and scrap rate, because a high rate on low volume and a lower rate on high volume can both matter.
+
+### Acceptance Criteria
+
+```text
+[ ] Total scrap matches a manual sum on the sample dataset.
+[ ] Scrap rate is calculated as total scrap / total production, not as an average of rates.
+[ ] A test case with uneven volumes (like the example above) returns 1.5%.
+[ ] Records with production_quantity = 0 do not cause errors.
+[ ] A group with total production = 0 shows N/A.
+[ ] Scrap by line, product and shift shows quantity and rate.
+[ ] KPIs respond to period, line, product and shift filters.
+```
+
+### Dependencies
+
+- REQ-001 (production records).
+
+---
+
+## REQ-009: Calculate Downtime KPIs
+
+### Problem
+
+The supervisor needs to know how much downtime occurred, where it is concentrated (line, product, shift) and what its main causes are, to decide where to act.
+
+### Input
+
+- Downtime events in the database (excluding orphans), filtered by the active filters.
+- Production records, to count shifts worked.
+
+### Process
+
+| KPI | Formula |
+|---|---|
+| Total downtime | `SUM(downtime_minutes)` |
+| Average downtime per shift | `Total downtime / number of shifts worked` |
+| Downtime by line | Total downtime grouped by `line` |
+| Downtime by product | Total downtime grouped by `product` |
+| Downtime by shift | Total downtime grouped by `shift` |
+| Downtime by cause | Total downtime and number of events grouped by `downtime_reason`, sorted from highest to lowest minutes, with % of total |
+
+**Shifts without downtime count as zero.** The average is divided by all shifts worked, not only by shifts with downtime events. Otherwise, the average would be inflated.
+
+Example:
+
+```text
+4 shifts worked; downtime: 60, 0, 0, 20 min
+
+Average = 80 / 4 = 20 min per shift      ← used
+Average of shifts with downtime = 40     ← not used
+```
+
+Setup / Changeover downtime is attributed to the incoming product (ADR-001).
+
+### Output
+
+Values for each KPI. Downtime by cause includes minutes, number of events and % of total downtime.
+
+### Acceptance Criteria
+
+```text
+[ ] Total downtime matches a manual sum on the sample dataset.
+[ ] Average downtime per shift divides by all shifts worked, including shifts with no downtime events.
+[ ] A test case like the example above returns 20 min per shift.
+[ ] Downtime by line, product and shift matches manual calculations.
+[ ] Downtime by cause shows minutes, number of events and % of total, sorted descending.
+[ ] Orphan downtime events are excluded, and the number excluded is shown.
+[ ] KPIs respond to period, line, product and shift filters.
+```
+
+### Dependencies
+
+- REQ-001 (production records, shifts worked).
+- REQ-002 (downtime events).
+- REQ-005 (orphan detection).
