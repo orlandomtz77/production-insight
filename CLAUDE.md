@@ -265,23 +265,55 @@ The data model should initially represent at least:
 
 ### Production Record
 
+One record per `date + line + shift + product` (a line may run more than one product in a shift).
+
 - id
 - date
 - line
-- product
 - shift
+- product
 - production_quantity
 - scrap_quantity
-- downtime_minutes
-- downtime_reason
 
 Example:
 
 ```text
-date        line    product      shift   production   scrap   downtime
-2026-10-01  L1      Product A    1       1250         42      35
-2026-10-01  L2      Product B    2       980          91      87
+date        line    shift   product      production   scrap
+2026-10-01  L1      1       Product A    600          20
+2026-10-01  L1      1       Product B    550          31
+2026-10-01  L2      2       Product B    980          91
 ```
+
+### Downtime Event
+
+Zero or more events per production record, linked by `date + line + shift + product`.
+
+- id
+- date
+- line
+- shift
+- product
+- downtime_minutes
+- downtime_reason
+
+`downtime_reason` must be one of: Machine failure, Material shortage, Quality issue, Setup / Changeover, Maintenance, Other.
+
+Setup / Changeover downtime is attributed to the incoming product.
+
+Example:
+
+```text
+date        line    shift   product      minutes   reason
+2026-10-01  L1      1       Product A    20        Machine failure
+2026-10-01  L1      1       Product B    15        Setup / Changeover
+2026-10-01  L2      2       Product B    87        Material shortage
+```
+
+Total downtime is calculated as `SUM(downtime_minutes)`; it is not stored in the production record.
+
+Total downtime per `date + line + shift` must not exceed 480 minutes (3 shifts of 8 hours).
+
+See `docs/decisions/ADR-001-downtime-events-table.md`.
 
 The data model may evolve as new requirements are identified.
 
