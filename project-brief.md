@@ -444,26 +444,25 @@ Priority Score =
 Impact × Deviation × Frequency
 ```
 
-However, the exact definitions of these components must be established before implementation.
+This model was revised during the sample dataset design (ADR-003), because it ranked a one-day problem above a recurring one. The current formula is:
+
+```text
+Priority Score = Cumulative Impact × Frequency
+```
 
 ## Impact
 
-**(to define before coding)**
-
-Potential candidates include:
-
-- Production loss
-- Scrap quantity
-- Downtime minutes
-- Estimated operational impact
+Measured in **lost pieces**, so production, scrap and downtime can be compared. Cumulative impact sums the lost pieces of the days beyond the alert threshold in the last 6 working days.
 
 ## Deviation
 
-Measures how far the current value is from the established baseline.
+Measures how far the current value is from the established baseline. It **triggers** the alert but is not part of the score.
 
 ## Frequency
 
-Measures how often the identified problem occurs within the available historical period.
+Number of days, among the last 6 working days, on which the problem was beyond the alert threshold (1–6).
+
+Details: REQ-013 in `docs/requirements.md` and `docs/decisions/ADR-003-priority-score.md`.
 
 The Priority Score is a **decision-support mechanism**.
 

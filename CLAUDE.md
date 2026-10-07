@@ -415,6 +415,18 @@ Impact × Deviation × Frequency
 
 The formula must be documented and may evolve over time.
 
+**Current formula (ADR-003):**
+
+```text
+Priority Score = Cumulative Impact × Frequency
+```
+
+- Cumulative Impact: lost pieces over the days beyond the alert threshold in the last 6 working days.
+- Frequency: number of those days (1–6).
+- Deviation triggers the alert but is not part of the score.
+
+See `docs/decisions/ADR-003-priority-score.md`.
+
 The score should never be presented as an absolute truth.
 
 It is a decision-support mechanism for prioritizing investigations.

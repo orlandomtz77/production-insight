@@ -811,7 +811,7 @@ L2 — Scrap rate above normal (2026-09-30)
 Current value:    8.7%
 Baseline:         3.2% (average of 24 working days, 2026-09-01 to 2026-09-29)
 Deviation:        +171.8% (6.1 standard deviations)
-Impact:           ~138 extra scrap pieces
+Impact:           ~138 extra scrap pieces today (~400 in the last 6 working days)
 Recurrence:       3 of the last 6 working days
 
 Where to investigate: Product B on L2 — scrap rate 12.4% that day.
@@ -857,16 +857,20 @@ When there are several alerts, the supervisor needs to know which one to investi
 ### Process
 
 ```text
-Priority Score = Impact × Deviation × Frequency
+Priority Score = Cumulative Impact × Frequency
 ```
 
-Decided 2026-10-07: **Impact** is measured in **lost pieces**, and **Frequency** over the **last 6 working days**.
+Decided 2026-10-07 (ADR-003). This replaces the initial model `Impact × Deviation × Frequency` from `CLAUDE.md` §13.
 
-#### Impact (lost pieces on the evaluated day)
+- **Impact** is measured in **lost pieces**.
+- **Frequency** is measured over the **last 6 working days**.
+- **Deviation is not part of the score.** It decides whether an alert exists (REQ-011) and is shown in the alert, but it does not rank it.
+
+#### Daily Impact (lost pieces on one day)
 
 All metrics are converted to pieces so they can be compared:
 
-| Metric | Impact formula |
+| Metric | Daily impact formula |
 |---|---|
 | Production per shift | `(baseline_mean − value) × shifts_worked` |
 | Scrap rate | `(value − baseline_mean) × production_quantity of the day` |
@@ -887,12 +891,8 @@ L1: baseline 1,200 pieces/shift, baseline downtime 40 min/shift
 line_rate = 1,200 / (480 − 40) = 2.73 pieces/min
 
 Evaluated day: 95 min/shift, 3 shifts worked
-Impact = (95 − 40) × 3 × 2.73 ≈ 450 pieces
+Daily impact = (95 − 40) × 3 × 2.73 ≈ 450 pieces
 ```
-
-#### Deviation
-
-`|z|` from REQ-011 (number of standard deviations from the baseline mean).
 
 #### Frequency
 
@@ -900,27 +900,50 @@ Number of days, among the **last 6 working days** (Monday–Saturday, including 
 
 Value from 1 (only the evaluated day) to 6 (every day of the last week).
 
+#### Cumulative Impact
+
+Sum of the daily impact of the days counted in Frequency.
+
+```text
+Cumulative Impact = SUM(daily impact) over the days beyond the threshold in the last 6 working days
+```
+
+#### Why This Formula
+
+A recurring problem must rank above a one-day problem of similar size: a one-day failure has often already been addressed, while a recurring problem is still active.
+
+Example (approximate values from the sample dataset design):
+
+```text
+A1 — L2 scrap, 3 days:   ~83 pieces/day → cumulative ~250 × 3 = ~750   → rank 1
+A2 — L1 downtime, 1 day: ~460 pieces    → cumulative  460 × 1 =  460   → rank 2
+```
+
+A very large one-day problem (e.g., 1,000 pieces) still ranks above a small recurring one.
+
 #### Ranking
 
 - Alerts are sorted by Priority Score, highest first.
-- The position (1, 2, 3...) is shown, together with the three components (impact, deviation, frequency), so the user can see **why** an alert ranks higher.
+- The position (1, 2, 3...) is shown, together with the components (cumulative impact, frequency) and the deviation, so the user can see **why** an alert ranks higher.
 - The score itself has no unit; it is only used to sort.
 
 ### Output
 
-Each alert from REQ-012 gets: impact (pieces), deviation (|z|), frequency (1–6), priority score and rank.
+Each alert from REQ-012 gets: daily impact (pieces), cumulative impact (pieces), frequency (1–6), deviation (|z|, informative), priority score and rank.
 
 ### Acceptance Criteria
 
 ```text
-[ ] Impact is calculated in pieces for all three metrics, using the formulas above.
+[ ] Daily impact is calculated in pieces for all three metrics, using the formulas above.
 [ ] line_rate is calculated from the line's baseline.
-[ ] A test case like the L1 example returns ≈ 450 pieces.
+[ ] A test case like the L1 example returns a daily impact of ≈ 450 pieces.
 [ ] Frequency counts the last 6 working days, including the evaluated day, with values from 1 to 6.
+[ ] Cumulative impact sums only the days counted in frequency.
+[ ] Priority Score = Cumulative Impact × Frequency; deviation is not part of it.
 [ ] Alerts are sorted by priority score, highest first.
-[ ] Each alert shows rank, impact, deviation and frequency.
+[ ] Each alert shows rank, cumulative impact, frequency and deviation.
 [ ] The dashboard states that the score is a decision-support tool, not an absolute measure of importance.
-[ ] In the sample dataset, an injected recurring anomaly ranks above an injected one-day anomaly of similar impact.
+[ ] In the sample dataset, A1 (recurring scrap on L2) ranks above A2 (one-day downtime on L1).
 ```
 
 ### Dependencies
@@ -930,7 +953,7 @@ Each alert from REQ-012 gets: impact (pieces), deviation (|z|), frequency (1–6
 ### Known Limitations
 
 - **Overlap between metrics:** a long downtime also reduces production, so the same event may raise a downtime alert and a production alert. Both are shown; the investigation area of each helps relate them.
-- **Deviation counted twice:** impact already grows with the deviation, and `|z|` multiplies it again. This favors large deviations; it is accepted for the MVP and will be reviewed with the sample dataset.
+- **Frequency weighs twice:** frequency increases cumulative impact and multiplies it again. This intentionally favors recurring problems (ADR-003).
 - **Recent days in the baseline:** the 5 previous days used for frequency are also part of the baseline. A long recurring problem raises the baseline and may reduce its own frequency. Accepted for the MVP.
 - **Pieces are not money:** a lost piece of a cheap product weighs the same as one of an expensive product. Cost per product may be added after the MVP.
 
