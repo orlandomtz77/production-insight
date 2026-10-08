@@ -1,0 +1,7 @@
+date,line,shift,product,downtime_minutes,downtime_reason
+2026-09-03,L1,1,Producto E,15,Falla de máquina
+2026-09-03,L2,1,Producto B,15,Falla
+2026-09-03,L3,1,Producto E,0,Otro
+2026-09-04,L1,1,Producto A,300,Falla de máquina
+2026-09-04,L1,1,Producto A,210,Falla de máquina
+2026-09-04,L2,1,Producto C,25,Mantenimiento

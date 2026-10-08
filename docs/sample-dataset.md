@@ -82,7 +82,7 @@ Each anomaly has an ID, used in the script and in the tests.
 
 | ID | Where | When | What | Purpose |
 |---|---|---|---|---|
-| **A1** | L2, Producto C | Sep 28, 29, 30 | Scrap rate of Producto C rises to ~9% (line scrap rate ~6%) | Recurring problem on the evaluated day |
+| **A1** | L2, Producto C | Sep 28, 29, 30 | Producto C runs in shifts 1 and 2 with scrap rate ~9% (line scrap rate ~7%) | Recurring problem on the evaluated day |
 | **A2** | L1, shift 2 | Sep 30 only | One `Falla de máquina` event of 180 min | One-day problem on the evaluated day |
 | **A3** | L3 | Sep 10 only | Scrap rate ~10% | Past problem: must **not** alert on Sep 30, but must be visible in the scrap trend |
 | **A4** | L3 | Sep 30 | Normal behavior | Control: no alert expected |
@@ -112,6 +112,8 @@ Approximate values (design targets):
 | A2 — L1 downtime | ~460 pieces | 1 | ~460 | ~460 |
 
 If the generated data does not produce this ranking, the anomaly sizes are adjusted in the script (not the formula), and the change is documented here.
+
+**Generated result:** A1 = 990 (rank 1), A2 production = 655 (rank 2), A2 downtime = 540 (rank 3). The ranking holds. See `data/sample/expected_results.md`.
 - Exact values (value, mean, std, z, impact, score) are recorded in `data/sample/expected_results.md` after generation, and verified by a manual calculation.
 
 ---
@@ -132,7 +134,7 @@ If the generated data does not produce this ranking, the anomaly sizes are adjus
 | `production_invalid.csv` | One row of each error: negative production, scrap > production, invalid date (`2026-09-31`), future date, unknown line (`L9`), shift `4`, unknown product, duplicate row | Each row rejected with its reason; valid shifts stored; shifts containing an invalid row are not stored |
 | `production_missing_column.csv` | No `scrap_quantity` column | Whole file rejected, naming the missing column |
 | `downtime_invalid.csv` | Orphan event (no production record), unknown reason (`Falla`), `downtime_minutes = 0`, a shift totaling 510 min | Each case rejected with its reason |
-| `production_reload.csv` | Sep 29, L2, shift 1, with only one of its two products | Shift replaced; the removed product's downtime events become **orphans** in REQ-005 |
+| `production_reload.csv` | Sep 29, L3, shift 1, with only one of its two products (Producto D) | Shift replaced; the removed product's downtime events become **orphans** in REQ-005 |
 
 ---
 

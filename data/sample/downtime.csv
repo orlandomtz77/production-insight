@@ -1,0 +1,485 @@
+date,line,shift,product,downtime_minutes,downtime_reason
+2026-09-01,L1,1,Producto B,21,Otro
+2026-09-01,L1,1,Producto B,10,Mantenimiento
+2026-09-01,L1,2,Producto B,14,Problema de calidad
+2026-09-01,L1,2,Producto B,19,Falta de material
+2026-09-01,L1,3,Producto B,41,Falla de máquina
+2026-09-01,L2,1,Producto C,48,Falla de máquina
+2026-09-01,L2,2,Producto C,20,Falla de máquina
+2026-09-01,L2,2,Producto C,34,Falla de máquina
+2026-09-01,L2,3,Producto B,30,Falla de máquina
+2026-09-01,L2,3,Producto B,24,Problema de calidad
+2026-09-01,L3,1,Producto D,44,Mantenimiento
+2026-09-01,L3,1,Producto D,7,Mantenimiento
+2026-09-01,L3,2,Producto D,31,Mantenimiento
+2026-09-01,L3,2,Producto D,14,Falta de material
+2026-09-01,L3,3,Producto E,47,Falla de máquina
+2026-09-02,L1,1,Producto B,13,Falla de máquina
+2026-09-02,L1,1,Producto B,6,Mantenimiento
+2026-09-02,L1,1,Producto B,26,Falta de material
+2026-09-02,L1,2,Producto A,41,Falla de máquina
+2026-09-02,L1,3,Producto A,8,Falta de material
+2026-09-02,L1,3,Producto A,35,Falta de material
+2026-09-02,L2,1,Producto D,17,Mantenimiento
+2026-09-02,L2,1,Producto D,10,Falla de máquina
+2026-09-02,L2,2,Producto B,30,Problema de calidad
+2026-09-02,L2,2,Producto B,19,Falta de material
+2026-09-02,L2,3,Producto C,17,Falta de material
+2026-09-02,L2,3,Producto C,13,Mantenimiento
+2026-09-02,L3,1,Producto E,18,Ajuste / Cambio de modelo
+2026-09-02,L3,1,Producto E,24,Falla de máquina
+2026-09-02,L3,2,Producto D,36,Otro
+2026-09-02,L3,2,Producto D,7,Falta de material
+2026-09-02,L3,3,Producto E,18,Falla de máquina
+2026-09-02,L3,3,Producto E,27,Falla de máquina
+2026-09-03,L1,1,Producto B,10,Falla de máquina
+2026-09-03,L1,1,Producto B,6,Mantenimiento
+2026-09-03,L1,1,Producto B,13,Falla de máquina
+2026-09-03,L1,2,Producto A,14,Falta de material
+2026-09-03,L1,2,Producto A,8,Falla de máquina
+2026-09-03,L1,3,Producto B,6,Problema de calidad
+2026-09-03,L1,3,Producto B,12,Falla de máquina
+2026-09-03,L1,3,Producto B,7,Falla de máquina
+2026-09-03,L2,1,Producto B,17,Mantenimiento
+2026-09-03,L2,1,Producto B,15,Mantenimiento
+2026-09-03,L2,1,Producto B,16,Falla de máquina
+2026-09-03,L2,2,Producto D,10,Falla de máquina
+2026-09-03,L2,2,Producto D,6,Falla de máquina
+2026-09-03,L2,2,Producto D,9,Falta de material
+2026-09-03,L2,3,Producto D,49,Falla de máquina
+2026-09-03,L3,1,Producto D,20,Ajuste / Cambio de modelo
+2026-09-03,L3,1,Producto D,31,Mantenimiento
+2026-09-03,L3,2,Producto D,16,Ajuste / Cambio de modelo
+2026-09-03,L3,2,Producto E,6,Mantenimiento
+2026-09-03,L3,2,Producto D,6,Falla de máquina
+2026-09-03,L3,2,Producto E,5,Problema de calidad
+2026-09-03,L3,3,Producto D,6,Falta de material
+2026-09-03,L3,3,Producto D,10,Mantenimiento
+2026-09-03,L3,3,Producto D,14,Falla de máquina
+2026-09-04,L1,1,Producto A,17,Falta de material
+2026-09-04,L1,1,Producto A,9,Falta de material
+2026-09-04,L1,2,Producto B,25,Mantenimiento
+2026-09-04,L1,2,Producto B,7,Problema de calidad
+2026-09-04,L1,2,Producto B,13,Falla de máquina
+2026-09-04,L1,3,Producto A,41,Problema de calidad
+2026-09-04,L2,1,Producto B,10,Ajuste / Cambio de modelo
+2026-09-04,L2,1,Producto C,5,Falta de material
+2026-09-04,L2,1,Producto B,18,Falla de máquina
+2026-09-04,L2,1,Producto B,8,Problema de calidad
+2026-09-04,L2,2,Producto D,37,Falta de material
+2026-09-04,L2,3,Producto C,11,Ajuste / Cambio de modelo
+2026-09-04,L2,3,Producto C,8,Mantenimiento
+2026-09-04,L2,3,Producto C,12,Mantenimiento
+2026-09-04,L2,3,Producto C,15,Falla de máquina
+2026-09-04,L3,1,Producto E,49,Falta de material
+2026-09-04,L3,2,Producto D,29,Mantenimiento
+2026-09-04,L3,2,Producto D,16,Falla de máquina
+2026-09-04,L3,3,Producto E,22,Mantenimiento
+2026-09-04,L3,3,Producto E,18,Falta de material
+2026-09-05,L1,1,Producto B,20,Problema de calidad
+2026-09-05,L1,2,Producto B,30,Otro
+2026-09-05,L1,2,Producto B,8,Mantenimiento
+2026-09-05,L1,3,Producto A,11,Falta de material
+2026-09-05,L1,3,Producto A,27,Falla de máquina
+2026-09-05,L1,3,Producto A,6,Falta de material
+2026-09-05,L2,1,Producto D,15,Falla de máquina
+2026-09-05,L2,1,Producto D,21,Falla de máquina
+2026-09-05,L2,1,Producto D,12,Falla de máquina
+2026-09-05,L2,2,Producto D,6,Falla de máquina
+2026-09-05,L2,2,Producto D,9,Falla de máquina
+2026-09-05,L2,2,Producto D,16,Falla de máquina
+2026-09-05,L2,3,Producto C,6,Mantenimiento
+2026-09-05,L2,3,Producto C,10,Falta de material
+2026-09-05,L2,3,Producto C,22,Falta de material
+2026-09-05,L3,1,Producto D,43,Mantenimiento
+2026-09-05,L3,2,Producto E,30,Falla de máquina
+2026-09-05,L3,3,Producto D,21,Problema de calidad
+2026-09-05,L3,3,Producto D,10,Falla de máquina
+2026-09-05,L3,3,Producto D,14,Otro
+2026-09-07,L1,1,Producto B,8,Falla de máquina
+2026-09-07,L1,1,Producto B,10,Problema de calidad
+2026-09-07,L1,1,Producto B,25,Mantenimiento
+2026-09-07,L1,2,Producto A,34,Problema de calidad
+2026-09-07,L1,2,Producto A,7,Falla de máquina
+2026-09-07,L1,3,Producto B,6,Falta de material
+2026-09-07,L1,3,Producto B,19,Mantenimiento
+2026-09-07,L1,3,Producto B,13,Mantenimiento
+2026-09-07,L2,1,Producto D,26,Mantenimiento
+2026-09-07,L2,2,Producto B,12,Ajuste / Cambio de modelo
+2026-09-07,L2,2,Producto B,8,Falla de máquina
+2026-09-07,L2,2,Producto C,6,Otro
+2026-09-07,L2,3,Producto D,14,Ajuste / Cambio de modelo
+2026-09-07,L2,3,Producto B,9,Otro
+2026-09-07,L2,3,Producto B,11,Falta de material
+2026-09-07,L3,1,Producto D,14,Falta de material
+2026-09-07,L3,1,Producto D,25,Falta de material
+2026-09-07,L3,2,Producto D,58,Falta de material
+2026-09-07,L3,3,Producto E,28,Mantenimiento
+2026-09-07,L3,3,Producto E,23,Falta de material
+2026-09-08,L1,1,Producto B,37,Problema de calidad
+2026-09-08,L1,1,Producto B,8,Falta de material
+2026-09-08,L1,2,Producto B,33,Problema de calidad
+2026-09-08,L1,2,Producto B,8,Falla de máquina
+2026-09-08,L1,3,Producto A,39,Falla de máquina
+2026-09-08,L2,1,Producto D,29,Falla de máquina
+2026-09-08,L2,2,Producto C,38,Mantenimiento
+2026-09-08,L2,3,Producto B,15,Ajuste / Cambio de modelo
+2026-09-08,L2,3,Producto B,26,Problema de calidad
+2026-09-08,L3,1,Producto E,15,Falta de material
+2026-09-08,L3,1,Producto E,41,Falta de material
+2026-09-08,L3,2,Producto E,21,Falta de material
+2026-09-08,L3,2,Producto E,10,Falta de material
+2026-09-08,L3,3,Producto D,22,Mantenimiento
+2026-09-08,L3,3,Producto D,34,Falla de máquina
+2026-09-09,L1,1,Producto B,41,Problema de calidad
+2026-09-09,L1,2,Producto A,8,Problema de calidad
+2026-09-09,L1,2,Producto A,6,Mantenimiento
+2026-09-09,L1,2,Producto A,9,Falla de máquina
+2026-09-09,L1,3,Producto B,15,Falla de máquina
+2026-09-09,L1,3,Producto B,23,Mantenimiento
+2026-09-09,L1,3,Producto B,6,Mantenimiento
+2026-09-09,L2,1,Producto C,11,Mantenimiento
+2026-09-09,L2,1,Producto C,15,Problema de calidad
+2026-09-09,L2,1,Producto C,29,Falla de máquina
+2026-09-09,L2,2,Producto D,34,Mantenimiento
+2026-09-09,L2,2,Producto D,11,Mantenimiento
+2026-09-09,L2,3,Producto D,15,Ajuste / Cambio de modelo
+2026-09-09,L2,3,Producto D,21,Mantenimiento
+2026-09-09,L2,3,Producto C,11,Falla de máquina
+2026-09-09,L2,3,Producto D,7,Mantenimiento
+2026-09-09,L3,1,Producto D,17,Ajuste / Cambio de modelo
+2026-09-09,L3,1,Producto D,13,Mantenimiento
+2026-09-09,L3,1,Producto D,21,Falla de máquina
+2026-09-09,L3,1,Producto E,7,Falta de material
+2026-09-09,L3,2,Producto D,19,Ajuste / Cambio de modelo
+2026-09-09,L3,2,Producto D,7,Falla de máquina
+2026-09-09,L3,2,Producto D,25,Problema de calidad
+2026-09-09,L3,3,Producto E,17,Ajuste / Cambio de modelo
+2026-09-09,L3,3,Producto E,6,Otro
+2026-09-09,L3,3,Producto D,9,Falta de material
+2026-09-10,L1,1,Producto A,17,Falla de máquina
+2026-09-10,L1,1,Producto A,15,Falla de máquina
+2026-09-10,L1,2,Producto A,21,Falta de material
+2026-09-10,L1,2,Producto A,10,Falla de máquina
+2026-09-10,L1,3,Producto B,43,Falta de material
+2026-09-10,L2,1,Producto C,34,Problema de calidad
+2026-09-10,L2,2,Producto C,30,Problema de calidad
+2026-09-10,L2,2,Producto C,19,Mantenimiento
+2026-09-10,L2,3,Producto C,20,Ajuste / Cambio de modelo
+2026-09-10,L2,3,Producto C,9,Otro
+2026-09-10,L2,3,Producto B,5,Falla de máquina
+2026-09-10,L3,1,Producto D,31,Falta de material
+2026-09-10,L3,2,Producto E,34,Falla de máquina
+2026-09-10,L3,2,Producto E,5,Problema de calidad
+2026-09-10,L3,3,Producto D,30,Mantenimiento
+2026-09-11,L1,1,Producto B,7,Problema de calidad
+2026-09-11,L1,1,Producto B,7,Falla de máquina
+2026-09-11,L1,1,Producto B,12,Falta de material
+2026-09-11,L1,2,Producto A,28,Falla de máquina
+2026-09-11,L1,3,Producto B,16,Problema de calidad
+2026-09-11,L1,3,Producto B,20,Falla de máquina
+2026-09-11,L2,1,Producto D,19,Ajuste / Cambio de modelo
+2026-09-11,L2,1,Producto B,36,Falta de material
+2026-09-11,L2,2,Producto C,49,Falta de material
+2026-09-11,L2,3,Producto C,10,Ajuste / Cambio de modelo
+2026-09-11,L2,3,Producto D,9,Falla de máquina
+2026-09-11,L2,3,Producto D,8,Problema de calidad
+2026-09-11,L2,3,Producto C,9,Falla de máquina
+2026-09-11,L3,1,Producto D,11,Problema de calidad
+2026-09-11,L3,1,Producto D,6,Falta de material
+2026-09-11,L3,1,Producto D,13,Falta de material
+2026-09-11,L3,2,Producto D,34,Problema de calidad
+2026-09-11,L3,3,Producto E,19,Mantenimiento
+2026-09-11,L3,3,Producto E,26,Mantenimiento
+2026-09-11,L3,3,Producto E,12,Falta de material
+2026-09-12,L1,1,Producto A,6,Falta de material
+2026-09-12,L1,1,Producto A,38,Falta de material
+2026-09-12,L1,2,Producto A,23,Falla de máquina
+2026-09-12,L1,2,Producto A,14,Problema de calidad
+2026-09-12,L1,3,Producto A,20,Mantenimiento
+2026-09-12,L1,3,Producto A,6,Mantenimiento
+2026-09-12,L1,3,Producto A,16,Mantenimiento
+2026-09-12,L2,1,Producto D,14,Falla de máquina
+2026-09-12,L2,1,Producto D,23,Otro
+2026-09-12,L2,1,Producto D,14,Falta de material
+2026-09-12,L2,2,Producto D,44,Falta de material
+2026-09-12,L2,3,Producto C,39,Falta de material
+2026-09-12,L3,1,Producto D,15,Mantenimiento
+2026-09-12,L3,1,Producto D,16,Problema de calidad
+2026-09-12,L3,2,Producto E,15,Ajuste / Cambio de modelo
+2026-09-12,L3,2,Producto D,5,Otro
+2026-09-12,L3,2,Producto E,11,Mantenimiento
+2026-09-12,L3,3,Producto D,33,Falla de máquina
+2026-09-12,L3,3,Producto D,9,Falta de material
+2026-09-12,L3,3,Producto D,11,Falla de máquina
+2026-09-14,L1,1,Producto B,24,Problema de calidad
+2026-09-14,L1,2,Producto A,16,Mantenimiento
+2026-09-14,L1,2,Producto A,26,Falla de máquina
+2026-09-14,L1,3,Producto B,16,Falta de material
+2026-09-14,L1,3,Producto B,6,Falta de material
+2026-09-14,L2,1,Producto B,15,Falla de máquina
+2026-09-14,L2,1,Producto B,13,Falla de máquina
+2026-09-14,L2,1,Producto B,14,Otro
+2026-09-14,L2,2,Producto B,24,Falla de máquina
+2026-09-14,L2,2,Producto B,16,Falla de máquina
+2026-09-14,L2,3,Producto C,29,Falla de máquina
+2026-09-14,L3,1,Producto E,13,Ajuste / Cambio de modelo
+2026-09-14,L3,1,Producto E,6,Falla de máquina
+2026-09-14,L3,1,Producto D,6,Otro
+2026-09-14,L3,1,Producto E,5,Mantenimiento
+2026-09-14,L3,2,Producto D,18,Ajuste / Cambio de modelo
+2026-09-14,L3,2,Producto D,6,Falla de máquina
+2026-09-14,L3,2,Producto D,7,Problema de calidad
+2026-09-14,L3,3,Producto D,18,Ajuste / Cambio de modelo
+2026-09-14,L3,3,Producto E,26,Mantenimiento
+2026-09-15,L1,1,Producto A,25,Mantenimiento
+2026-09-15,L1,1,Producto A,12,Problema de calidad
+2026-09-15,L1,2,Producto B,39,Mantenimiento
+2026-09-15,L1,3,Producto B,13,Falta de material
+2026-09-15,L1,3,Producto B,19,Problema de calidad
+2026-09-15,L1,3,Producto B,7,Falta de material
+2026-09-15,L2,1,Producto C,38,Mantenimiento
+2026-09-15,L2,2,Producto B,12,Ajuste / Cambio de modelo
+2026-09-15,L2,2,Producto B,37,Falla de máquina
+2026-09-15,L2,3,Producto B,10,Otro
+2026-09-15,L2,3,Producto B,11,Falta de material
+2026-09-15,L2,3,Producto B,24,Falla de máquina
+2026-09-15,L3,1,Producto E,38,Falta de material
+2026-09-15,L3,1,Producto E,8,Problema de calidad
+2026-09-15,L3,2,Producto E,56,Falta de material
+2026-09-16,L1,1,Producto A,10,Mantenimiento
+2026-09-16,L1,1,Producto A,11,Mantenimiento
+2026-09-16,L1,1,Producto A,9,Mantenimiento
+2026-09-16,L1,2,Producto B,14,Falta de material
+2026-09-16,L1,2,Producto B,22,Falla de máquina
+2026-09-16,L1,3,Producto A,29,Mantenimiento
+2026-09-16,L2,1,Producto C,28,Falta de material
+2026-09-16,L2,2,Producto C,44,Mantenimiento
+2026-09-16,L2,3,Producto C,6,Falta de material
+2026-09-16,L2,3,Producto C,12,Mantenimiento
+2026-09-16,L2,3,Producto C,10,Mantenimiento
+2026-09-16,L3,1,Producto E,11,Ajuste / Cambio de modelo
+2026-09-16,L3,1,Producto D,11,Falla de máquina
+2026-09-16,L3,1,Producto E,18,Falla de máquina
+2026-09-16,L3,1,Producto E,12,Mantenimiento
+2026-09-16,L3,2,Producto E,30,Problema de calidad
+2026-09-16,L3,2,Producto E,5,Falla de máquina
+2026-09-17,L1,1,Producto B,21,Mantenimiento
+2026-09-17,L1,2,Producto A,28,Problema de calidad
+2026-09-17,L1,3,Producto A,14,Mantenimiento
+2026-09-17,L1,3,Producto A,8,Falta de material
+2026-09-17,L2,1,Producto C,37,Mantenimiento
+2026-09-17,L2,2,Producto B,10,Ajuste / Cambio de modelo
+2026-09-17,L2,2,Producto B,24,Falta de material
+2026-09-17,L2,2,Producto D,16,Problema de calidad
+2026-09-17,L2,3,Producto D,33,Falta de material
+2026-09-17,L3,1,Producto E,20,Ajuste / Cambio de modelo
+2026-09-17,L3,1,Producto D,6,Falta de material
+2026-09-17,L3,1,Producto E,5,Problema de calidad
+2026-09-17,L3,2,Producto D,40,Falla de máquina
+2026-09-17,L3,2,Producto D,7,Problema de calidad
+2026-09-17,L3,3,Producto E,8,Falla de máquina
+2026-09-17,L3,3,Producto E,24,Falla de máquina
+2026-09-18,L1,1,Producto A,6,Falla de máquina
+2026-09-18,L1,1,Producto A,12,Problema de calidad
+2026-09-18,L1,1,Producto A,7,Falla de máquina
+2026-09-18,L1,2,Producto A,28,Falla de máquina
+2026-09-18,L1,3,Producto B,22,Falla de máquina
+2026-09-18,L2,1,Producto B,26,Otro
+2026-09-18,L2,1,Producto B,20,Falta de material
+2026-09-18,L2,2,Producto B,32,Falta de material
+2026-09-18,L2,2,Producto B,8,Falta de material
+2026-09-18,L2,3,Producto B,19,Ajuste / Cambio de modelo
+2026-09-18,L2,3,Producto B,30,Falta de material
+2026-09-18,L3,1,Producto E,40,Falta de material
+2026-09-18,L3,2,Producto D,47,Falla de máquina
+2026-09-18,L3,2,Producto D,13,Mantenimiento
+2026-09-18,L3,3,Producto E,16,Falta de material
+2026-09-18,L3,3,Producto E,37,Mantenimiento
+2026-09-19,L1,1,Producto A,12,Mantenimiento
+2026-09-19,L1,1,Producto A,5,Falta de material
+2026-09-19,L1,1,Producto A,5,Falla de máquina
+2026-09-19,L1,2,Producto A,12,Problema de calidad
+2026-09-19,L1,2,Producto A,20,Falla de máquina
+2026-09-19,L1,3,Producto A,9,Otro
+2026-09-19,L1,3,Producto A,8,Problema de calidad
+2026-09-19,L1,3,Producto A,14,Falla de máquina
+2026-09-19,L2,1,Producto B,14,Otro
+2026-09-19,L2,1,Producto B,14,Falta de material
+2026-09-19,L2,2,Producto D,28,Problema de calidad
+2026-09-19,L2,3,Producto B,9,Mantenimiento
+2026-09-19,L2,3,Producto B,10,Falta de material
+2026-09-19,L2,3,Producto B,6,Falta de material
+2026-09-19,L3,1,Producto E,58,Falla de máquina
+2026-09-19,L3,2,Producto D,42,Falla de máquina
+2026-09-19,L3,3,Producto E,35,Falta de material
+2026-09-19,L3,3,Producto E,6,Otro
+2026-09-21,L1,1,Producto B,6,Problema de calidad
+2026-09-21,L1,1,Producto B,21,Falla de máquina
+2026-09-21,L1,2,Producto B,16,Falta de material
+2026-09-21,L1,2,Producto B,22,Falta de material
+2026-09-21,L1,3,Producto B,16,Problema de calidad
+2026-09-21,L1,3,Producto B,8,Mantenimiento
+2026-09-21,L2,1,Producto B,8,Falta de material
+2026-09-21,L2,1,Producto B,16,Problema de calidad
+2026-09-21,L2,1,Producto B,12,Otro
+2026-09-21,L2,2,Producto D,36,Falla de máquina
+2026-09-21,L2,3,Producto C,17,Falla de máquina
+2026-09-21,L2,3,Producto C,6,Otro
+2026-09-21,L2,3,Producto C,8,Falla de máquina
+2026-09-21,L3,1,Producto D,13,Falla de máquina
+2026-09-21,L3,1,Producto D,24,Falta de material
+2026-09-21,L3,2,Producto D,54,Falta de material
+2026-09-21,L3,3,Producto D,20,Falta de material
+2026-09-21,L3,3,Producto D,12,Mantenimiento
+2026-09-22,L1,1,Producto A,17,Falla de máquina
+2026-09-22,L1,1,Producto A,7,Mantenimiento
+2026-09-22,L1,2,Producto B,10,Falta de material
+2026-09-22,L1,2,Producto B,12,Otro
+2026-09-22,L1,3,Producto A,45,Falla de máquina
+2026-09-22,L2,1,Producto B,32,Problema de calidad
+2026-09-22,L2,1,Producto B,7,Mantenimiento
+2026-09-22,L2,2,Producto D,9,Mantenimiento
+2026-09-22,L2,2,Producto D,9,Otro
+2026-09-22,L2,2,Producto D,12,Falla de máquina
+2026-09-22,L2,3,Producto B,8,Falla de máquina
+2026-09-22,L2,3,Producto B,39,Falla de máquina
+2026-09-22,L3,1,Producto D,52,Otro
+2026-09-22,L3,2,Producto D,46,Mantenimiento
+2026-09-22,L3,3,Producto E,54,Falla de máquina
+2026-09-23,L1,1,Producto A,7,Problema de calidad
+2026-09-23,L1,1,Producto A,14,Falta de material
+2026-09-23,L1,2,Producto A,24,Falta de material
+2026-09-23,L1,3,Producto A,14,Falla de máquina
+2026-09-23,L1,3,Producto A,13,Falla de máquina
+2026-09-23,L2,1,Producto B,18,Problema de calidad
+2026-09-23,L2,1,Producto B,26,Mantenimiento
+2026-09-23,L2,2,Producto C,15,Ajuste / Cambio de modelo
+2026-09-23,L2,2,Producto C,10,Problema de calidad
+2026-09-23,L2,2,Producto D,15,Falla de máquina
+2026-09-23,L2,3,Producto B,34,Falta de material
+2026-09-23,L3,1,Producto D,49,Falla de máquina
+2026-09-23,L3,2,Producto D,55,Falla de máquina
+2026-09-23,L3,3,Producto E,53,Problema de calidad
+2026-09-24,L1,1,Producto B,26,Falla de máquina
+2026-09-24,L1,2,Producto A,10,Otro
+2026-09-24,L1,2,Producto A,5,Falla de máquina
+2026-09-24,L1,2,Producto A,24,Falla de máquina
+2026-09-24,L1,3,Producto A,19,Falla de máquina
+2026-09-24,L1,3,Producto A,11,Falta de material
+2026-09-24,L2,1,Producto D,23,Problema de calidad
+2026-09-24,L2,1,Producto D,10,Falla de máquina
+2026-09-24,L2,1,Producto D,14,Mantenimiento
+2026-09-24,L2,2,Producto B,31,Falla de máquina
+2026-09-24,L2,3,Producto B,44,Falla de máquina
+2026-09-24,L3,1,Producto E,22,Falla de máquina
+2026-09-24,L3,1,Producto E,14,Mantenimiento
+2026-09-24,L3,2,Producto E,31,Problema de calidad
+2026-09-24,L3,2,Producto E,8,Falla de máquina
+2026-09-24,L3,2,Producto E,10,Falta de material
+2026-09-24,L3,3,Producto D,59,Problema de calidad
+2026-09-25,L1,1,Producto B,10,Falta de material
+2026-09-25,L1,1,Producto B,6,Falta de material
+2026-09-25,L1,1,Producto B,8,Falta de material
+2026-09-25,L1,2,Producto B,13,Mantenimiento
+2026-09-25,L1,2,Producto B,7,Otro
+2026-09-25,L1,2,Producto B,6,Mantenimiento
+2026-09-25,L1,3,Producto B,10,Falla de máquina
+2026-09-25,L1,3,Producto B,19,Falta de material
+2026-09-25,L2,1,Producto C,19,Mantenimiento
+2026-09-25,L2,1,Producto C,17,Falla de máquina
+2026-09-25,L2,2,Producto D,54,Mantenimiento
+2026-09-25,L2,3,Producto C,18,Ajuste / Cambio de modelo
+2026-09-25,L2,3,Producto C,33,Otro
+2026-09-25,L3,1,Producto D,38,Falla de máquina
+2026-09-25,L3,1,Producto D,8,Falla de máquina
+2026-09-25,L3,2,Producto D,11,Falla de máquina
+2026-09-25,L3,2,Producto D,23,Problema de calidad
+2026-09-25,L3,2,Producto D,19,Mantenimiento
+2026-09-25,L3,3,Producto D,11,Ajuste / Cambio de modelo
+2026-09-25,L3,3,Producto E,21,Falla de máquina
+2026-09-25,L3,3,Producto E,15,Falla de máquina
+2026-09-25,L3,3,Producto E,13,Falla de máquina
+2026-09-26,L1,1,Producto B,8,Falta de material
+2026-09-26,L1,1,Producto B,12,Mantenimiento
+2026-09-26,L1,2,Producto A,9,Falla de máquina
+2026-09-26,L1,2,Producto A,15,Problema de calidad
+2026-09-26,L1,3,Producto B,42,Falla de máquina
+2026-09-26,L2,1,Producto B,9,Falta de material
+2026-09-26,L2,1,Producto B,12,Falta de material
+2026-09-26,L2,1,Producto B,13,Falla de máquina
+2026-09-26,L2,2,Producto C,43,Falta de material
+2026-09-26,L2,3,Producto D,22,Falta de material
+2026-09-26,L2,3,Producto D,17,Falta de material
+2026-09-26,L2,3,Producto D,9,Falta de material
+2026-09-26,L3,1,Producto D,41,Falta de material
+2026-09-26,L3,1,Producto D,8,Falta de material
+2026-09-26,L3,2,Producto E,15,Falla de máquina
+2026-09-26,L3,2,Producto E,44,Falla de máquina
+2026-09-26,L3,3,Producto D,51,Falla de máquina
+2026-09-27,L1,1,Producto A,10,Falla de máquina
+2026-09-27,L1,1,Producto A,18,Problema de calidad
+2026-09-27,L1,2,Producto B,8,Falla de máquina
+2026-09-27,L1,2,Producto B,9,Falta de material
+2026-09-27,L1,2,Producto B,12,Otro
+2026-09-28,L1,1,Producto B,17,Problema de calidad
+2026-09-28,L1,1,Producto B,25,Falla de máquina
+2026-09-28,L1,2,Producto B,26,Falta de material
+2026-09-28,L1,2,Producto B,9,Falta de material
+2026-09-28,L1,2,Producto B,8,Falta de material
+2026-09-28,L1,3,Producto B,20,Problema de calidad
+2026-09-28,L1,3,Producto B,8,Falta de material
+2026-09-28,L2,1,Producto C,6,Mantenimiento
+2026-09-28,L2,1,Producto C,16,Falla de máquina
+2026-09-28,L2,1,Producto C,13,Falla de máquina
+2026-09-28,L2,2,Producto C,18,Falta de material
+2026-09-28,L2,2,Producto C,6,Falta de material
+2026-09-28,L2,2,Producto C,18,Falla de máquina
+2026-09-28,L2,3,Producto B,19,Ajuste / Cambio de modelo
+2026-09-28,L2,3,Producto B,13,Mantenimiento
+2026-09-28,L2,3,Producto C,11,Mantenimiento
+2026-09-28,L3,1,Producto E,52,Falla de máquina
+2026-09-28,L3,2,Producto E,49,Mantenimiento
+2026-09-28,L3,3,Producto E,42,Falla de máquina
+2026-09-28,L3,3,Producto E,7,Falta de material
+2026-09-29,L1,1,Producto B,38,Problema de calidad
+2026-09-29,L1,1,Producto B,6,Otro
+2026-09-29,L1,2,Producto A,12,Problema de calidad
+2026-09-29,L1,2,Producto A,8,Falta de material
+2026-09-29,L1,2,Producto A,5,Falta de material
+2026-09-29,L1,3,Producto B,13,Falta de material
+2026-09-29,L1,3,Producto B,18,Falla de máquina
+2026-09-29,L1,3,Producto B,8,Otro
+2026-09-29,L2,1,Producto C,6,Mantenimiento
+2026-09-29,L2,1,Producto C,8,Falla de máquina
+2026-09-29,L2,1,Producto C,13,Problema de calidad
+2026-09-29,L2,2,Producto C,14,Mantenimiento
+2026-09-29,L2,2,Producto C,11,Otro
+2026-09-29,L2,2,Producto C,5,Falla de máquina
+2026-09-29,L2,3,Producto B,34,Mantenimiento
+2026-09-29,L3,1,Producto E,19,Ajuste / Cambio de modelo
+2026-09-29,L3,1,Producto E,6,Otro
+2026-09-29,L3,1,Producto D,5,Mantenimiento
+2026-09-29,L3,2,Producto D,34,Falla de máquina
+2026-09-29,L3,3,Producto D,24,Mantenimiento
+2026-09-29,L3,3,Producto D,14,Falla de máquina
+2026-09-30,L1,1,Producto A,21,Falta de material
+2026-09-30,L1,1,Producto A,7,Falta de material
+2026-09-30,L1,2,Producto B,7,Falta de material
+2026-09-30,L1,2,Producto B,18,Mantenimiento
+2026-09-30,L1,2,Producto B,5,Falla de máquina
+2026-09-30,L1,2,Producto B,180,Falla de máquina
+2026-09-30,L1,3,Producto A,6,Falla de máquina
+2026-09-30,L1,3,Producto A,15,Falla de máquina
+2026-09-30,L1,3,Producto A,24,Otro
+2026-09-30,L2,1,Producto C,6,Falta de material
+2026-09-30,L2,1,Producto C,9,Falla de máquina
+2026-09-30,L2,1,Producto C,13,Falla de máquina
+2026-09-30,L2,2,Producto C,13,Problema de calidad
+2026-09-30,L2,2,Producto C,36,Falta de material
+2026-09-30,L2,3,Producto D,51,Problema de calidad
+2026-09-30,L3,1,Producto D,37,Falla de máquina
+2026-09-30,L3,2,Producto D,21,Falla de máquina
+2026-09-30,L3,2,Producto D,14,Mantenimiento
+2026-09-30,L3,3,Producto E,18,Falta de material
+2026-09-30,L3,3,Producto E,13,Falla de máquina

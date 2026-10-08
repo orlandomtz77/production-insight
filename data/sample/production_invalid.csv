@@ -1,0 +1,13 @@
+date,line,shift,product,production_quantity,scrap_quantity
+2026-09-02,L1,1,Producto A,1300,30
+2026-09-02,L1,2,Producto A,-5,0
+2026-09-02,L1,2,Producto B,600,20
+2026-09-02,L1,3,Producto A,100,150
+2026-09-31,L2,1,Producto B,1000,30
+2030-01-01,L2,1,Producto B,1000,30
+2026-09-02,L9,1,Producto A,1000,30
+2026-09-02,L2,4,Producto B,1000,30
+2026-09-02,L2,2,Producto Z,1000,30
+2026-09-02,L3,1,Producto D,900,30
+2026-09-02,L3,1,Producto D,900,30
+2026-09-02,L3,2,Producto E,850,25
