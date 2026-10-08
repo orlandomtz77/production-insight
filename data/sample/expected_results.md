@@ -76,6 +76,8 @@ Evaluated day: **2026-09-30**. Baseline: 25 working days (2026-09-01 to 2026-09-
 
 ### `production_invalid.csv` (12 rows)
 
+Rows below are data rows. The error detail shown to the user uses **Excel row numbers** (header = row 1), so data row 1 is reported as row 2.
+
 | Row | Case | Expected |
 |---|---|---|
 | 1 | 2026-09-02 / L1 / 1, valid | **Stored** |

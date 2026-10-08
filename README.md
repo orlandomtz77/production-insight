@@ -25,6 +25,12 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Tests
+
+```bash
+python -m pytest
+```
+
 ## Project Structure
 
 ```text
