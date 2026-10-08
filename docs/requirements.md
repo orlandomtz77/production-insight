@@ -196,7 +196,7 @@ Required columns:
 | line | text | Must exist in `data/master/lines.csv` |
 | shift | integer | 1, 2 or 3 |
 | product | text | Must exist in `data/master/products.csv` |
-| downtime_minutes | number | > 0 and ≤ 480 |
+| downtime_minutes | integer | > 0 and ≤ 480 (whole minutes, ADR-004) |
 | downtime_reason | text | Must exist in `data/master/downtime_reasons.csv` |
 
 ### Load Order
