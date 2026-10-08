@@ -17,3 +17,8 @@ def replace_shifts(conn: sqlite3.Connection, rows: pd.DataFrame) -> tuple[int, i
 def existing_keys(conn: sqlite3.Connection) -> set[tuple[str, str, int, str]]:
     """All stored date + line + shift + product keys (used to detect orphan downtime)."""
     return set(conn.execute(f"SELECT date, line, shift, product FROM {TABLE}").fetchall())
+
+
+def worked_shifts(conn: sqlite3.Connection) -> set[tuple[str, str, int]]:
+    """Distinct date + line + shift with at least one production record."""
+    return set(conn.execute(f"SELECT DISTINCT date, line, shift FROM {TABLE}").fetchall())

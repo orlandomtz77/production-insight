@@ -3,6 +3,8 @@
 import sqlite3
 from dataclasses import astuple, dataclass
 
+import pandas as pd
+
 
 @dataclass
 class LoadSummary:
@@ -29,3 +31,8 @@ def insert_load_history(conn: sqlite3.Connection, summary: LoadSummary) -> None:
         """,
         astuple(summary),
     )
+
+
+def load_history(conn: sqlite3.Connection) -> pd.DataFrame:
+    """All uploads, newest first."""
+    return pd.read_sql_query("SELECT * FROM load_history ORDER BY id DESC", conn)

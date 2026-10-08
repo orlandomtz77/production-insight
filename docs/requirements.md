@@ -9,11 +9,11 @@
 
 | ID | Name | Status |
 |---|---|---|
-| REQ-001 | Upload Production CSV | Defined |
-| REQ-002 | Upload Downtime CSV | Defined |
+| REQ-001 | Upload Production CSV | Implemented (logic + tests; dashboard UI pending) |
+| REQ-002 | Upload Downtime CSV | Implemented (logic + tests; dashboard UI pending) |
 | REQ-003 | Validate Production Records | Merged into REQ-001 |
 | REQ-004 | Validate Downtime Records | Merged into REQ-002 |
-| REQ-005 | Data Quality Report | Defined |
+| REQ-005 | Data Quality Report | Implemented (logic + tests; dashboard UI pending) |
 | REQ-006 | Store Valid Records | Merged into REQ-001 / REQ-002 |
 | REQ-007 | Calculate Production KPIs | Defined |
 | REQ-008 | Calculate Quality KPIs | Defined |
