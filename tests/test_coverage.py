@@ -46,3 +46,22 @@ def test_sunday_without_data_is_never_missing():
 
 def test_no_data_returns_none():
     assert calculate_coverage(set(), ["L1"]) is None
+
+
+def test_planned_stop_is_not_expected():
+    worked = {("2026-09-07", "L1", s) for s in (1, 2)}  # shift 3 is a planned stop
+
+    coverage = calculate_coverage(worked, ["L1"], planned_stops={("2026-09-07", "L1", 3)})
+
+    assert coverage.missing_shifts == []
+    assert coverage.expected_shifts == 2
+    assert coverage.planned_stop_shifts == 1
+
+
+def test_planned_stop_with_data_is_listed_as_extra_shift():
+    worked = {("2026-09-07", "L1", s) for s in (1, 2, 3)}
+
+    coverage = calculate_coverage(worked, ["L1"], planned_stops={("2026-09-07", "L1", 3)})
+
+    assert coverage.overtime_shifts == [("2026-09-07", "L1", 3)]
+    assert coverage.covered_shifts == 2

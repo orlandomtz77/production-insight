@@ -258,7 +258,7 @@ date,line,shift,product,production_quantity,scrap_quantity
 2026-09-30,L1,3,Producto A,1207,25
 2026-09-30,L2,1,Producto C,1082,97
 2026-09-30,L2,2,Producto C,1034,93
-2026-09-30,L2,3,Producto D,972,27
+2026-09-30,L2,3,Producto D,700,20
 2026-09-30,L3,1,Producto D,822,31
 2026-09-30,L3,2,Producto D,832,25
 2026-09-30,L3,3,Producto E,820,30

@@ -1,7 +1,7 @@
 """Generate the synthetic sample dataset for Production Insight.
 
 Design: docs/sample-dataset.md
-Each injected anomaly or data quality case is marked with its ID (A1, A2, A3, Q1, Q2).
+Each injected anomaly or data quality case is marked with its ID (A1, A2, A3, Q1, Q2, P1, P2).
 
 Usage:
     python scripts/generate_sample_data.py
@@ -29,14 +29,17 @@ PRODUCTS = ["Producto A", "Producto B", "Producto C", "Producto D", "Producto E"
 
 CHANGEOVER = "Ajuste / Cambio de modelo"
 MACHINE_FAILURE = "Falla de máquina"
-DOWNTIME_REASONS = [
-    MACHINE_FAILURE,
-    "Falta de material",
-    "Problema de calidad",
-    CHANGEOVER,
-    "Mantenimiento",
-    "Otro",
-]
+PLANNED_STOP = "Paro programado"
+# Reason -> planned (ADR-005). Mantenimiento is preventive maintenance.
+DOWNTIME_REASONS = {
+    MACHINE_FAILURE: False,
+    "Falta de material": False,
+    "Problema de calidad": False,
+    CHANGEOVER: False,
+    "Mantenimiento": True,
+    PLANNED_STOP: True,
+    "Otro": False,
+}
 
 # Normal mix of downtime reasons. Changeover events are only created when a shift
 # runs two products, so they are not part of the random mix.
@@ -81,6 +84,8 @@ Q1_MISSING = {(date(2026, 9, 15), "L3", 3), (date(2026, 9, 16), "L3", 3)}
 Q2_SUNDAY = date(2026, 9, 27)
 Q2_SHIFTS = {("L1", 1), ("L1", 2)}
 RELOAD_SHIFT = (date(2026, 9, 29), "L3", 1)
+# P1: planned stop in the calendar for one of the Q1 gaps.
+PLANNED_STOPS = [(date(2026, 9, 16), "L3", 3, "Sin programa")]
 
 # Products forced for a shift: (date, line, shift) -> products
 FORCED_PRODUCTS = {
@@ -102,6 +107,8 @@ SCRAP_OVERRIDES = {
 EXTRA_EVENTS = {
     # A2: one long machine failure on L1, shift 2, evaluated day only.
     (A2_DAY, "L1", 2): [(180, MACHINE_FAILURE)],
+    # P2: planned downtime on L2, shift 3, evaluated day. Must not raise an alert.
+    (A2_DAY, "L2", 3): [(120, PLANNED_STOP)],
 }
 
 
@@ -293,7 +300,22 @@ def main():
     print("Master lists:")
     write_csv(pd.DataFrame({"line": list(LINE_PROFILES)}), MASTER_DIR / "lines.csv")
     write_csv(pd.DataFrame({"product": PRODUCTS}), MASTER_DIR / "products.csv")
-    write_csv(pd.DataFrame({"downtime_reason": DOWNTIME_REASONS}), MASTER_DIR / "downtime_reasons.csv")
+    write_csv(
+        pd.DataFrame(
+            {
+                "downtime_reason": list(DOWNTIME_REASONS),
+                "planned": ["sí" if planned else "no" for planned in DOWNTIME_REASONS.values()],
+            }
+        ),
+        MASTER_DIR / "downtime_reasons.csv",
+    )
+    write_csv(
+        pd.DataFrame(
+            [(day.isoformat(), line, shift, reason) for day, line, shift, reason in PLANNED_STOPS],
+            columns=["date", "line", "shift", "reason"],
+        ),
+        MASTER_DIR / "planned_stops.csv",
+    )
 
     production, downtime = generate_main_files(rng)
 

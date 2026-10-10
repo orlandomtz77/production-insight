@@ -47,7 +47,7 @@ def test_downtime_before_production_is_rejected_as_orphan(conn):
     result = load(conn, "downtime.csv")
 
     assert result.summary.rows_stored == 0
-    assert result.summary.rows_rejected == 484
+    assert result.summary.rows_rejected == 485
     assert {error.code for error in result.errors} == {"orphan_event"}
 
 
@@ -56,7 +56,7 @@ def test_main_file_loads_without_rejections(conn_with_production):
 
     assert result.summary.status == "completed"
     assert result.summary.file_type == "downtime"
-    assert result.summary.rows_stored == 484
+    assert result.summary.rows_stored == 485
     assert result.summary.rows_rejected == 0
     assert result.summary.shifts_new == 234
     assert result.summary.warnings == 0
@@ -96,7 +96,7 @@ def test_reload_replaces_events_of_all_products_in_shift(conn_with_production):
 
     result = load(conn_with_production, "downtime.csv")
     assert result.summary.shifts_replaced == 234
-    assert conn_with_production.execute("SELECT COUNT(*) FROM downtime_events").fetchone()[0] == 484
+    assert conn_with_production.execute("SELECT COUNT(*) FROM downtime_events").fetchone()[0] == 485
 
 
 def test_production_reload_leaves_orphan_events(conn_with_production):

@@ -478,6 +478,7 @@ date,line,shift,product,downtime_minutes,downtime_reason
 2026-09-30,L2,2,Producto C,13,Problema de calidad
 2026-09-30,L2,2,Producto C,36,Falta de material
 2026-09-30,L2,3,Producto D,51,Problema de calidad
+2026-09-30,L2,3,Producto D,120,Paro programado
 2026-09-30,L3,1,Producto D,37,Falla de máquina
 2026-09-30,L3,2,Producto D,21,Falla de máquina
 2026-09-30,L3,2,Producto D,14,Mantenimiento

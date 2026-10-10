@@ -40,6 +40,7 @@ def test_empty_database_reports_no_data(conn):
     assert report.coverage is None
     assert report.orphan_events.empty
     assert report.load_history.empty
+    assert report.planned_stops_invalid == []
 
 
 def test_coverage_of_sample_dataset(loaded):
@@ -47,10 +48,11 @@ def test_coverage_of_sample_dataset(loaded):
 
     assert coverage.period_start == date(2026, 9, 1)
     assert coverage.period_end == date(2026, 9, 30)
-    assert coverage.expected_shifts == 234
+    assert coverage.expected_shifts == 233  # 234 − 1 planned stop (P1)
     assert coverage.covered_shifts == 232
-    assert round(coverage.coverage_percent, 1) == 99.1
-    assert coverage.missing_shifts == [("2026-09-15", "L3", 3), ("2026-09-16", "L3", 3)]
+    assert round(coverage.coverage_percent, 1) == 99.6
+    assert coverage.planned_stop_shifts == 1
+    assert coverage.missing_shifts == [("2026-09-15", "L3", 3)]
     assert coverage.overtime_shifts == [("2026-09-27", "L1", 1), ("2026-09-27", "L1", 2)]
 
 

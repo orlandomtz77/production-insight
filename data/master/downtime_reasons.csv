@@ -1,7 +1,8 @@
-downtime_reason
-Falla de máquina
-Falta de material
-Problema de calidad
-Ajuste / Cambio de modelo
-Mantenimiento
-Otro
+downtime_reason,planned
+Falla de máquina,no
+Falta de material,no
+Problema de calidad,no
+Ajuste / Cambio de modelo,no
+Mantenimiento,sí
+Paro programado,sí
+Otro,no

@@ -8,7 +8,7 @@ import pandas as pd
 
 from src.analytics.coverage import Coverage, calculate_coverage
 from src.database import downtime_repository, load_history_repository, production_repository
-from src.ingestion.master_data import load_master_lists
+from src.ingestion.master_data import load_master_lists, load_planned_stops
 
 
 @dataclass
@@ -16,6 +16,7 @@ class DataQualityReport:
     coverage: Coverage | None
     orphan_events: pd.DataFrame
     load_history: pd.DataFrame
+    planned_stops_invalid: list[str]
 
     @property
     def has_data(self) -> bool:
@@ -25,8 +26,12 @@ class DataQualityReport:
 def build_data_quality_report(conn: sqlite3.Connection, master_dir: Path) -> DataQualityReport:
     """Raises MasterDataError if the master lists cannot be read."""
     lines = load_master_lists(master_dir).lines
+    planned_stops = load_planned_stops(master_dir, lines)
     return DataQualityReport(
-        coverage=calculate_coverage(production_repository.worked_shifts(conn), lines),
+        coverage=calculate_coverage(
+            production_repository.worked_shifts(conn), lines, planned_stops.shifts
+        ),
         orphan_events=downtime_repository.orphan_events(conn),
         load_history=load_history_repository.load_history(conn),
+        planned_stops_invalid=planned_stops.invalid_rows,
     )
