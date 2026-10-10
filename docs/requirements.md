@@ -15,9 +15,9 @@
 | REQ-004 | Validate Downtime Records | Merged into REQ-002 |
 | REQ-005 | Data Quality Report | Implemented (logic + tests; dashboard UI pending) |
 | REQ-006 | Store Valid Records | Merged into REQ-001 / REQ-002 |
-| REQ-007 | Calculate Production KPIs | Defined |
-| REQ-008 | Calculate Quality KPIs | Defined |
-| REQ-009 | Calculate Downtime KPIs | Defined |
+| REQ-007 | Calculate Production KPIs | Implemented (logic + tests; dashboard UI pending) |
+| REQ-008 | Calculate Quality KPIs | Implemented (logic + tests; dashboard UI pending) |
+| REQ-009 | Calculate Downtime KPIs | Implemented (logic + tests; dashboard UI pending) |
 | REQ-010 | Calculate Baselines | Defined |
 | REQ-011 | Detect Deviations | Defined |
 | REQ-012 | Generate Explainable Alerts | Defined |

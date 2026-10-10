@@ -22,3 +22,10 @@ def existing_keys(conn: sqlite3.Connection) -> set[tuple[str, str, int, str]]:
 def worked_shifts(conn: sqlite3.Connection) -> set[tuple[str, str, int]]:
     """Distinct date + line + shift with at least one production record."""
     return set(conn.execute(f"SELECT DISTINCT date, line, shift FROM {TABLE}").fetchall())
+
+
+def read_all(conn: sqlite3.Connection) -> pd.DataFrame:
+    return pd.read_sql_query(
+        f"SELECT date, line, shift, product, production_quantity, scrap_quantity FROM {TABLE}",
+        conn,
+    )

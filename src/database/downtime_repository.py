@@ -30,3 +30,21 @@ def orphan_events(conn: sqlite3.Connection) -> pd.DataFrame:
         """,
         conn,
     )
+
+
+def read_linked_events(conn: sqlite3.Connection) -> pd.DataFrame:
+    """Downtime events that have a production record (orphans excluded)."""
+    return pd.read_sql_query(
+        """
+        SELECT d.date, d.line, d.shift, d.product, d.downtime_minutes, d.downtime_reason
+          FROM downtime_events d
+         WHERE EXISTS (
+               SELECT 1
+                 FROM production_records p
+                WHERE p.date = d.date
+                  AND p.line = d.line
+                  AND p.shift = d.shift
+                  AND p.product = d.product)
+        """,
+        conn,
+    )
