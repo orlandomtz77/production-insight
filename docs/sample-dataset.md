@@ -71,6 +71,7 @@ data/master/downtime_reasons.csv  Falla de máquina, Falta de material, Problema
 
   This keeps production and downtime consistent, as in a real line.
 - **Product changeovers:** about 1 in 5 shifts on L2 and L3 runs two products. The shift is split between them, and an `Ajuste / Cambio de modelo` event (10–20 min) is attributed to the incoming product.
+- `Mantenimiento` events are **planned** downtime (ADR-005); expected results must be recalculated after the generator is updated.
 - Downtime reasons, normal mix: Falla de máquina 30%, Falta de material 20%, Ajuste / Cambio de modelo 20% (only with changeovers), Mantenimiento 15%, Problema de calidad 10%, Otro 5%.
 - Normal values stay inside the ranges above, so normal days do not trigger alerts.
 
@@ -126,6 +127,8 @@ If the generated data does not produce this ranking, the anomaly sizes are adjus
 |---|---|---|
 | **Q1** | L3, shift 3 has no data on Sep 15 and Sep 16 | 2 missing shifts; no alert caused by them (normalization per shift worked) |
 | **Q2** | Sunday Sep 27: L1 shifts 1 and 2 work overtime | 2 Sunday overtime shifts; included in KPIs; excluded from baselines |
+| **P1** | `planned_stops.csv`: 2026-09-16 / L3 / 3, `Sin programa` | Sep 16 is no longer a gap: Q1 leaves 1 missing shift (Sep 15) and 1 planned stop |
+| **P2** | `Paro programado` 120 min on L2, shift 3, Sep 30 | Planned downtime: no downtime or production alert on L2 |
 
 ### Separate Files for Validation Tests
 

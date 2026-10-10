@@ -195,7 +195,8 @@ Values are in **Spanish**, as captured by supervisors:
 | Falta de material | Material shortage |
 | Problema de calidad | Quality issue |
 | Ajuste / Cambio de modelo | Setup / changeover |
-| Mantenimiento | Maintenance |
+| Mantenimiento | Preventive maintenance (planned) |
+| Paro programado | Planned stop: meetings, cleaning, training (planned) |
 | Otro | Other |
 
 Downtime events are linked to production records through:
@@ -574,6 +575,8 @@ The MVP will be considered successful when all of the following conditions are m
 - `Ajuste / Cambio de modelo` downtime is attributed to the incoming product.
 - Lines and products come from fixed master lists (`data/master/`).
 - Regular working days are Monday to Saturday; Sunday is worked only as overtime.
+- Planned downtime (`Mantenimiento` preventive, `Paro programado`) is separated from unplanned downtime and does not generate alerts; planned non-working days or shifts are listed in `planned_stops.csv` (ADR-005).
+- Scrap is analyzed by shift over time (shift × week) to see whether a problem is always in the same shift.
 - Downtime is calculated from individual downtime events.
 - Total downtime for a date + line + shift must not exceed 480 minutes.
 - The initial dataset covers one month.

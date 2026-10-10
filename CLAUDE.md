@@ -296,7 +296,9 @@ Zero or more events per production record, linked by `date + line + shift + prod
 - downtime_minutes
 - downtime_reason
 
-`downtime_reason` must be one of: `Falla de máquina`, `Falta de material`, `Problema de calidad`, `Ajuste / Cambio de modelo`, `Mantenimiento`, `Otro` (values in Spanish, as captured by supervisors).
+`downtime_reason` must be one of: `Falla de máquina`, `Falta de material`, `Problema de calidad`, `Ajuste / Cambio de modelo`, `Mantenimiento`, `Paro programado`, `Otro` (values in Spanish, as captured by supervisors).
+
+`Mantenimiento` (preventive) and `Paro programado` are **planned** downtime: shown separately and excluded from alerts. Days or shifts a line is not scheduled to run are listed in `data/master/planned_stops.csv`. See `docs/decisions/ADR-005-planned-downtime.md`.
 
 `Ajuste / Cambio de modelo` (setup / changeover) downtime is attributed to the incoming product.
 

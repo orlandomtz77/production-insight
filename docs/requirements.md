@@ -62,13 +62,15 @@ The lists are stored as small CSV files, maintained manually:
 data/master/
 ├── lines.csv              (column: line)
 ├── products.csv           (column: product)
-└── downtime_reasons.csv   (column: downtime_reason)
+├── downtime_reasons.csv   (columns: downtime_reason, planned)
+└── planned_stops.csv      (columns: date, line, shift, reason) — optional
 ```
 
 - Values are compared exactly (case-sensitive, after trimming spaces).
 - Adding a new line or product means adding a row to the corresponding file.
 - If a master list file is missing or empty, the upload is rejected with a clear message.
 - The MVP does not validate which products can run on which lines.
+- `downtime_reasons.csv` marks each reason as planned (`sí`) or unplanned (`no`); `planned_stops.csv` lists days or shifts a line is not scheduled to run (ADR-005).
 - Values are stored as captured by supervisors, in **Spanish** (e.g., `Falla de máquina`), and shown in the dashboard as stored.
 
 ### Replacement Unit: the Shift
@@ -314,6 +316,7 @@ Production records expected but not found.
 ```text
 Period   = from the earliest to the latest date with production records
 Expected = every Monday–Saturday in the period × every line in lines.csv × shifts 1, 2, 3
+           − planned stops (planned_stops.csv)
 Gap      = expected date + line + shift with no production record
 ```
 
@@ -322,6 +325,7 @@ Gap      = expected date + line + shift with no production record
 - Monday to Saturday are regular working days and are expected to have data.
 - Sunday is not a regular working day and **never generates gaps**.
 - **Sunday overtime:** production and downtime on a Sunday are accepted and stored like any other day. They are counted in KPIs and shown in the coverage report as "overtime shifts". No configuration is needed: Sunday overtime is detected from the data itself.
+- **Planned stops (ADR-005):** shifts listed in `planned_stops.csv` (empty shift = whole day) are not expected and never generate gaps. If they have data anyway, they are listed with the overtime shifts. The report shows the number of planned stop shifts in the period and any invalid rows of `planned_stops.csv` (ignored).
 
 Gaps are shown as **"missing data"**, not as errors: a gap may still be planned (e.g., a holiday).
 
@@ -372,6 +376,9 @@ Each section can be expanded to see the detail (list of orphan events, list of m
 [ ] Missing shifts are labeled as "missing data", not as errors.
 [ ] Only Monday–Saturday shifts are expected; a Sunday without data never appears as a gap.
 [ ] Sunday shifts with data are accepted and listed as overtime shifts.
+[ ] Shifts in planned_stops.csv (or the whole day when shift is empty) are not expected and never appear as gaps.
+[ ] Invalid rows in planned_stops.csv are ignored and listed in the report.
+[ ] A missing planned_stops.csv means no planned stops (no error).
 [ ] Every upload (completed or rejected) creates a load history record.
 [ ] The load history is shown from newest to oldest.
 [ ] With an empty database, the report shows a clear "no data loaded" message instead of failing.
@@ -386,7 +393,7 @@ Each section can be expanded to see the detail (list of orphan events, list of m
 
 ### Open Points
 
-- **Holidays and planned stops:** holidays (Monday–Saturday) and lines not running a given shift still appear as gaps. A holiday calendar is out of scope for the MVP.
+- **Holidays and planned stops:** resolved by `planned_stops.csv` (ADR-005).
 - **Effect on baselines:** resolved in REQ-010 — daily values are normalized per shift worked, so gaps do not distort baselines.
 - **Sunday overtime in baselines:** resolved in REQ-010 — Sundays are excluded from baselines and from alert evaluation.
 
@@ -410,6 +417,12 @@ These rules apply to REQ-007, REQ-008 and REQ-009.
 | Production record | One row: `date + line + shift + product` |
 | Shift worked | One distinct `date + line + shift` with at least one production record |
 | Ratio of totals | A rate is always calculated as `SUM(numerator) / SUM(denominator)` over the group, never as an average of individual rates |
+
+### Time Grain
+
+Trend charts can group values by **day**, **week** (Monday–Sunday) or **month**, selected by the user. Rates are always recalculated as ratio of totals for each period, never averaged from daily rates.
+
+With one month of data, the monthly view has a single point; it becomes useful as history grows.
 
 ### Display
 
@@ -482,6 +495,7 @@ Production records in the database, filtered by the active filters.
 | Scrap by line | Scrap quantity and scrap rate grouped by `line` |
 | Scrap by product | Scrap quantity and scrap rate grouped by `product` |
 | Scrap by shift | Scrap quantity and scrap rate grouped by `shift` |
+| Scrap by shift over time | Scrap rate per shift (rows) × week (columns) |
 
 **Ratio of totals** (decided 2026-10-07): the scrap rate of a group is total scrap divided by total production, so each shift weighs according to what it produced.
 
@@ -494,6 +508,8 @@ Shift B: production    10, scrap  5   (50.0%)
 Scrap rate = 15 / 1,010 = 1.5%     ← used
 Average of rates = 25.5%           ← not used
 ```
+
+**Scrap by shift over time** answers: is the problem always in the same shift, or does it move? Each cell is `SUM(scrap) / SUM(production)` for that shift and week.
 
 Records with `production_quantity = 0` add nothing to the numerator or denominator, so they do not affect the rate.
 
@@ -536,12 +552,16 @@ The supervisor needs to know how much downtime occurred, where it is concentrate
 
 | KPI | Formula |
 |---|---|
-| Total downtime | `SUM(downtime_minutes)` |
-| Average downtime per shift | `Total downtime / number of shifts worked` |
+| Unplanned downtime | `SUM(downtime_minutes)` of unplanned reasons |
+| Planned downtime | `SUM(downtime_minutes)` of planned reasons (shown separately) |
+| Total downtime | Unplanned + planned |
+| Average unplanned downtime per shift | `Unplanned downtime / number of shifts worked` |
 | Downtime by line | Total downtime grouped by `line` |
 | Downtime by product | Total downtime grouped by `product` |
 | Downtime by shift | Total downtime grouped by `shift` |
 | Downtime by cause | Total downtime and number of events grouped by `downtime_reason`, sorted from highest to lowest minutes, with % of total |
+
+Planned / unplanned comes from the `planned` column of `downtime_reasons.csv` (ADR-005). Grouped KPIs (by line, product, shift) show unplanned downtime by default; downtime by cause lists every reason with its classification.
 
 **Shifts without downtime count as zero.** The average is divided by all shifts worked, not only by shifts with downtime events. Otherwise, the average would be inflated.
 
@@ -613,9 +633,15 @@ A baseline is calculated per **line** for three daily metrics:
 
 | Metric | Daily value per line | Unfavorable direction |
 |---|---|---|
-| Production per shift | `SUM(production_quantity) / shifts worked` | Lower |
+| Production per available shift | `SUM(production_quantity) / available shifts` | Lower |
 | Scrap rate | `SUM(scrap_quantity) / SUM(production_quantity)` | Higher |
-| Downtime per shift | `SUM(downtime_minutes) / shifts worked` | Higher |
+| Unplanned downtime per shift | `SUM(unplanned downtime_minutes) / shifts worked` | Higher |
+
+```text
+available shifts = (shifts worked × 480 − planned downtime minutes) / 480
+```
+
+Planned downtime (ADR-005) is not a loss: it does not count as downtime for alerts, and it reduces the time available for production.
 
 Values are normalized **per shift worked** so that a day with a missing shift (coverage gap, REQ-005) does not look like a production drop or a downtime improvement.
 
@@ -716,9 +742,9 @@ A deviation is detected when it is **more than 2 standard deviations in the unfa
 
 | Metric | Condition |
 |---|---|
-| Production per shift | `z < −2` |
+| Production per available shift | `z < −2` |
 | Scrap rate | `z > 2` |
-| Downtime per shift | `z > 2` |
+| Unplanned downtime per shift | `z > 2` |
 
 Favorable deviations (e.g., unusually low scrap) do not generate alerts.
 
@@ -797,9 +823,9 @@ Each deviation becomes one alert with these parts (`CLAUDE.md` §12):
 
 | Metric | Investigation area shown |
 |---|---|
-| Production per shift | Shift with the lowest production, and the main downtime cause of the line that day |
+| Production per available shift | Shift with the lowest production, and the main unplanned downtime cause of the line that day |
 | Scrap rate | Product with the highest scrap rate on that line that day |
-| Downtime per shift | Downtime cause with the most minutes on that line that day, and its shift |
+| Unplanned downtime per shift | Unplanned downtime cause with the most minutes on that line that day, and its shift |
 
 The investigation area points to **where to look**, not to the root cause.
 
@@ -872,14 +898,14 @@ All metrics are converted to pieces so they can be compared:
 
 | Metric | Daily impact formula |
 |---|---|
-| Production per shift | `(baseline_mean − value) × shifts_worked` |
+| Production per available shift | `(baseline_mean − value) × available_shifts` |
 | Scrap rate | `(value − baseline_mean) × production_quantity of the day` |
-| Downtime per shift | `(value − baseline_mean) × shifts_worked × line_rate` |
+| Unplanned downtime per shift | `(value − baseline_mean) × shifts_worked × line_rate` |
 
 ```text
 line_rate (pieces per minute) =
-    baseline mean production per shift
-  / (480 − baseline mean downtime per shift)
+    baseline mean production per available shift
+  / (480 − baseline mean unplanned downtime per shift)
 ```
 
 `line_rate` is calculated from the line's own baseline, so no new data (e.g., standard rates per product) is required.
@@ -979,6 +1005,7 @@ A single Streamlit application, in **Spanish**.
 
 1. Upload: production CSV button, then downtime CSV button (in that order, as required by REQ-002).
 2. Filters: period (date range), line, product, shift. Default: all data.
+3. Time grain for trend charts: day, week or month.
 
 **Main area — tabs:**
 
@@ -1029,7 +1056,8 @@ Per `CLAUDE.md` §15, each element is listed with the question it answers.
 | Bar chart: scrap rate by line (with scrap quantity) | Which line has the highest scrap rate? |
 | Bar chart: scrap rate by product | Which product has the highest scrap rate? |
 | Bar chart: scrap rate by shift | Is scrap concentrated in a shift? |
-| Line chart: daily scrap rate per line | Is the problem recurring or getting worse? |
+| Line chart: scrap rate per line, by day / week / month | Is the problem recurring or getting worse? |
+| Heatmap: scrap rate by shift × week | Is the problem always in the same shift? |
 
 **Paros**
 
@@ -1038,7 +1066,8 @@ Per `CLAUDE.md` §15, each element is listed with the question it answers.
 | Bar chart: downtime by line | Which line had the most downtime? |
 | Sorted bar chart (Pareto): downtime by cause, with % of total | What are the main downtime causes? |
 | Bar chart: downtime by shift and by product | Is downtime concentrated in a shift or product? |
-| Line chart: daily downtime per shift worked, per line | Is downtime increasing? |
+| Line chart: unplanned downtime per shift worked, per line, by day / week / month | Is downtime increasing? |
+| Cards: unplanned vs. planned downtime | How much downtime is a real loss? |
 
 **Calidad de datos**
 
