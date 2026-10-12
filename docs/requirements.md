@@ -18,8 +18,8 @@
 | REQ-007 | Calculate Production KPIs | Implemented (logic + tests; dashboard UI pending) |
 | REQ-008 | Calculate Quality KPIs | Implemented (logic + tests; dashboard UI pending) |
 | REQ-009 | Calculate Downtime KPIs | Implemented (logic + tests; dashboard UI pending) |
-| REQ-010 | Calculate Baselines | Defined |
-| REQ-011 | Detect Deviations | Defined |
+| REQ-010 | Calculate Baselines | Implemented (logic + tests; dashboard UI pending) |
+| REQ-011 | Detect Deviations | Implemented (logic + tests; dashboard UI pending) |
 | REQ-012 | Generate Explainable Alerts | Defined |
 | REQ-013 | Calculate Priority Scores | Defined |
 | REQ-014 | Display Dashboard | Defined |
@@ -668,7 +668,7 @@ n          = number of baseline days
 
 - A baseline requires **at least 10 days** (`n ≥ 10`).
 - If `n < 10`, the baseline is marked **"insufficient history"** and no alert is generated for that line and metric.
-- If `std = 0` (all baseline days identical), the baseline is marked **"no variation"** and no alert is generated.
+- If `std = 0` (all baseline days identical), the baseline is marked **"no variation"** and no alert is generated. Because of floating point, "0" is checked with a small tolerance (`std ≤ 1e-9 × max(1, |mean|)`).
 
 With one month of data (≈ 25 working days), every line that runs regularly has enough history.
 
