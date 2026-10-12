@@ -128,3 +128,16 @@ def test_month_review(loaded_db, monkeypatch):
     assert app.sidebar.selectbox[0].options == ["septiembre 2026"]
     assert any("Acumulado de septiembre de 2026" in c.value for c in app.caption)
 
+
+def test_clear_all_data_requires_confirmation(loaded_db, monkeypatch):
+    app = run_app(loaded_db, monkeypatch)
+
+    delete = next(b for b in app.sidebar.button if b.label == "Borrar todos los datos")
+    assert delete.disabled
+
+    app.sidebar.checkbox[0].check().run()
+    next(b for b in app.sidebar.button if b.label == "Borrar todos los datos").click().run()
+
+    assert not app.exception
+    assert any("Se borraron todos los datos" in s.value for s in app.success)
+    assert any("Cargue primero" in info.value for info in app.info)

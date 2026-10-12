@@ -1,4 +1,4 @@
-"""Integration tests for alerts of a period (REQ-016)."""
+"""Integration tests for alerts of a period (REQ-016) and clearing data (REQ-017)."""
 
 from datetime import date
 from pathlib import Path
@@ -7,6 +7,7 @@ import pytest
 
 from src.anomaly_detection.alerts import run_alerts, run_alerts_for_period
 from src.database.connection import connect
+from src.database.maintenance import clear_all_data
 from src.ingestion.load_downtime import load_downtime_file
 from src.ingestion.load_production import load_production_file
 
@@ -61,3 +62,10 @@ def test_month_summarizes_lines_not_evaluated(conn):
     assert summary[("L1", "scrap_rate", "insufficient_history")] == 10  # Sep 1–11: fewer than 10 previous working days
     assert report.evaluated_lines == {"L1", "L2", "L3"}
 
+
+def test_clear_all_data_empties_every_table(conn):
+    clear_all_data(conn)
+
+    for table in ("production_records", "downtime_events", "load_history"):
+        assert conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 0
+    assert (MASTER_DIR / "lines.csv").exists()

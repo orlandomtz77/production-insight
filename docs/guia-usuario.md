@@ -277,7 +277,7 @@ En **Revisar por** elige Día (y el día) o Semana. Ver sección 5.
 Pasa cuando recargas producción y un producto desaparece de un turno: sus paros se quedan sin registro. Vuelve a cargar el archivo de paros de ese turno.
 
 **¿Cómo borro todo y empiezo de cero?**
-Cierra el dashboard (`Ctrl + C`), borra el archivo `data\production_insight.db` y vuelve a abrirlo.
+Al final de la barra lateral, en **Borrar datos**, abre *Borrar todos los datos cargados*, marca la confirmación y presiona **Borrar todos los datos**. Se borran producción, paros e historial de cargas; las listas de líneas, productos y causas no se tocan. No se puede deshacer.
 
 **¿Puedo probar sin datos reales?**
 Sí. Carga `data/sample/production.csv` y después `data/sample/downtime.csv`. Son datos de ejemplo con problemas incluidos a propósito.

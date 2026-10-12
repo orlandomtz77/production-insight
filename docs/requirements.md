@@ -25,6 +25,7 @@
 | REQ-014 | Display Dashboard | Implemented (smoke tests; visual review) |
 | REQ-015 | Review a Selected Day | Implemented; selector replaced by REQ-016 |
 | REQ-016 | Review Period: Day, Week or Month | Implemented (logic + tests; dashboard) |
+| REQ-017 | Clear All Data | Implemented (tests; dashboard) |
 
 Merged IDs are kept (not reused) so references stay stable.
 
@@ -1253,6 +1254,33 @@ It **replaces** the "Día a revisar" selector (REQ-015), the "Periodo" date filt
 [ ] Trend charts use day grain for a week and week grain for a month; they are hidden for a single day.
 [ ] Sample dataset, week of 2026-09-28: includes the L2 scrap alert of the 28th and the three alerts of the 30th.
 [ ] Sample dataset, Día 2026-09-30: same alerts as REQ-011 / REQ-013.
+```
+
+---
+
+## REQ-017: Clear All Data
+
+Decided 2026-10-12, from user testing.
+
+### Problem
+
+The database keeps every upload. To analyze another dataset (another month, another plant, or real data instead of the sample), the supervisor needs to start from an empty database.
+
+### Process
+
+- Sidebar section **"Borrar datos"**, at the bottom.
+- Deletes **all** production records, downtime events and the load history. Master lists are not touched.
+- It cannot be undone, so it requires an explicit confirmation (a checkbox) before the button is enabled.
+- One transaction: either everything is deleted or nothing is.
+- After deleting, the dashboard shows the empty state ("Cargue primero…") and a confirmation message.
+
+### Acceptance Criteria
+
+```text
+[ ] The delete button is disabled until the confirmation checkbox is checked.
+[ ] After deleting, production, downtime and load history are empty.
+[ ] Master list files are unchanged.
+[ ] The dashboard shows the empty state and a message confirming the deletion.
 ```
 
 ---

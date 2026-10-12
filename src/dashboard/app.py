@@ -1,4 +1,4 @@
-"""Streamlit dashboard (REQ-014, REQ-016). All text shown to the user is in Spanish.
+"""Streamlit dashboard (REQ-014, REQ-016, REQ-017). All text shown to the user is in Spanish.
 
 Each visualization is introduced by the question it answers (CLAUDE.md §15).
 The dashboard only displays results; every calculation lives in src/analytics
@@ -41,6 +41,7 @@ from src.dashboard.formatting import (
 )
 from src.database import downtime_repository, production_repository
 from src.database.connection import DEFAULT_DB_PATH, connect
+from src.database.maintenance import clear_all_data
 from src.ingestion.load_downtime import load_downtime_file
 from src.ingestion.load_production import load_production_file
 from src.ingestion.master_data import MasterDataError, load_master_lists
@@ -93,6 +94,20 @@ def _period_selector(all_production: pd.DataFrame) -> ReviewPeriod | None:
         "Periodo a revisar", periods, format_func=period_label, label_visibility="collapsed",
         help="Del más reciente al más antiguo. Los días son de lunes a sábado.",
     )
+
+
+def _clear_data_section(conn) -> None:
+    """REQ-017: delete every upload to start from an empty database."""
+    st.sidebar.header("Borrar datos")
+    with st.sidebar.expander("Borrar todos los datos cargados"):
+        st.caption("Borra producción, paros e historial de cargas. No se puede deshacer. "
+                   "Las listas de líneas, productos y causas no se tocan.")
+        confirmed = st.checkbox("Confirmo que quiero borrar todos los datos")
+        if st.button("Borrar todos los datos", disabled=not confirmed, width="stretch"):
+            clear_all_data(conn)
+            st.session_state.pop("last_load", None)
+            st.session_state["data_cleared"] = True
+            st.rerun()
 
 
 def _filters_section(master) -> KpiFilters:
@@ -401,6 +416,9 @@ def main() -> None:
         period = _period_selector(all_production)
         _upload_section(conn, master_dir)
         filters = _filters_section(master)
+        _clear_data_section(conn)
+        if st.session_state.pop("data_cleared", False):
+            st.success("Se borraron todos los datos. Ya puedes cargar otros archivos.")
         _show_last_load()
 
         if period is None:
