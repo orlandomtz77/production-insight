@@ -50,7 +50,7 @@ def scrap_alert():
 
 
 def test_alert_title():
-    assert alert_title(scrap_alert()) == "L2 — Scrap rate por encima de lo normal (2026-09-30)"
+    assert alert_title(scrap_alert()) == "L2: Scrap rate por encima de lo normal (2026-09-30)"
 
 
 def test_alert_message_has_every_required_part():
@@ -75,3 +75,20 @@ def test_alert_message_has_every_required_part():
 )
 def test_format_shifts(shifts, expected):
     assert format_shifts(shifts) == expected
+
+
+@pytest.mark.parametrize(
+    ("grain", "expected"),
+    [("day", "30-sep"), ("week", "Sem. 30-sep"), ("month", "sep 2026")],
+)
+def test_format_period(grain, expected):
+    from src.dashboard.formatting import format_period
+
+    assert format_period(date(2026, 9, 30), grain) == expected
+
+
+def test_format_long_date():
+    from src.dashboard.formatting import format_long_date
+
+    assert format_long_date(date(2026, 9, 30)) == "miércoles 30 de septiembre de 2026"
+

@@ -17,6 +17,9 @@ data/raw/*
 data/processed/*
 !data/processed/.gitkeep
 
+# Browser automation output
+.playwright-mcp/
+
 # Editors / OS
 .vscode/
 .idea/

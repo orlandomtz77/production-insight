@@ -1,0 +1,6 @@
+[theme]
+# Slot 1 of the validated chart palette, so controls do not compete with alert colors.
+primaryColor = "#2a78d6"
+
+[browser]
+gatherUsageStats = false

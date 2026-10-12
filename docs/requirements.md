@@ -22,7 +22,7 @@
 | REQ-011 | Detect Deviations | Implemented (logic + tests; dashboard UI pending) |
 | REQ-012 | Generate Explainable Alerts | Implemented (logic + tests; dashboard UI pending) |
 | REQ-013 | Calculate Priority Scores | Implemented (logic + tests; dashboard UI pending) |
-| REQ-014 | Display Dashboard | Defined |
+| REQ-014 | Display Dashboard | Implemented (smoke tests; visual review) |
 
 Merged IDs are kept (not reused) so references stay stable.
 
@@ -1118,3 +1118,16 @@ streamlit run app.py
 ### Open Points
 
 - **Master list values:** resolved — master lists contain the values as captured by supervisors, in Spanish (e.g., `Falla de máquina`). They are shown in the dashboard as stored.
+
+---
+
+## Future Improvements (not in the MVP)
+
+Ideas identified during the MVP. Each one must go through the normal workflow (problem → requirement → acceptance criteria) before being implemented.
+
+| ID | Improvement | Origin | Why it is not in the MVP |
+|---|---|---|---|
+| IMP-001 | **Date selector for alerts**: choose which day to evaluate in the Alertas tab, to review alerts of past days (e.g., after loading last week's data). Baseline = working days before the selected day; recurrence = 6 working days up to that day. | REQ-014 design review, 2026-10-12 | The MVP answers "what happened on the last working day?" (REQ-011). The detection logic already accepts any evaluated day internally; the change is mainly UI + tests. |
+| IMP-002 | Baselines per product or per line + shift | REQ-010 open point | Products do not run every day; their daily history is sparse with one month of data. |
+| IMP-003 | Cost per product (impact in money, not pieces) | REQ-013 known limitation | Requires a cost list that does not exist yet. |
+| IMP-004 | Holiday / planned stop maintenance screen | ADR-005 | `planned_stops.csv` is edited manually for now. |

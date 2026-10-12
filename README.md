@@ -2,7 +2,7 @@
 
 Operational analytics for production supervisors: load production, scrap and downtime data, calculate KPIs, detect abnormal behavior, and see **where to investigate first and why**.
 
-> Status: MVP in development — Phase 2 (Data).
+> Status: MVP functional — all requirements REQ-001 to REQ-014 implemented. Future improvements: `docs/requirements.md`.
 
 ## Requirements
 
@@ -24,6 +24,18 @@ source .venv/bin/activate
 
 pip install -r requirements.txt
 ```
+
+## Run the Dashboard
+
+```bash
+streamlit run app.py
+```
+
+Then, in the sidebar: load the production CSV first, then the downtime CSV.
+To try it with the sample data, use `data/sample/production.csv` and `data/sample/downtime.csv`.
+
+The database is created at `data/production_insight.db` (not versioned). Set
+`PRODUCTION_INSIGHT_DB` to use another file.
 
 ## Tests
 
