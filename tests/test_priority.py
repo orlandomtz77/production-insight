@@ -80,3 +80,13 @@ def test_recurrence_ignores_favorable_days():
     days, _ = recurrence(daily, ev, rate=None)
 
     assert len(days) == 1
+
+
+def test_recurrence_counts_6_working_days_up_to_the_selected_day():
+    # Days 21..29 (Sun 27 skipped); select the 26th: window is 21..26.
+    daily = daily_values([0.09, 0.03, 0.03, 0.03, 0.03, 0.09, 0.09, 0.09])
+    ev = evaluation(SCRAP, 0.09, mean=0.03, std=0.01, direction=+1)
+
+    days, _ = recurrence(daily, ev, rate=None, until=date(2026, 9, 26))
+
+    assert [d.isoformat() for d in days] == ["2026-09-21", "2026-09-26"]

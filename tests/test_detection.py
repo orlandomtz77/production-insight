@@ -170,3 +170,26 @@ def test_line_without_production_on_evaluated_day_is_not_evaluated():
     result = detect_deviations(pd.concat([l1, l2]))
 
     assert ("L2", "scrap_rate", "no_production") in result.not_evaluated
+
+
+# --- Selected day (REQ-015) ------------------------------------------------------
+
+def test_selected_day_ignores_later_days():
+    values = [0.02, 0.04] * 6 + [0.10] + [0.90] * 3  # anomaly, then three later extreme days
+    df = daily(values)
+    selected = date.fromisoformat(df["date"].iloc[12])
+
+    result = detect_deviations(df, day=selected)
+
+    assert result.evaluated_day == selected
+    deviation = result.deviations[0]
+    assert deviation.baseline.mean == pytest.approx(0.03)  # later days not in the baseline
+    assert deviation.value == pytest.approx(0.10)
+
+
+def test_working_days_are_monday_to_saturday_newest_first():
+    from src.anomaly_detection.deviations import working_days
+
+    df = pd.DataFrame({"date": ["2026-09-26", "2026-09-27", "2026-09-28", "2026-09-28"]})
+
+    assert working_days(df) == [date(2026, 9, 28), date(2026, 9, 26)]  # Sunday 27 excluded

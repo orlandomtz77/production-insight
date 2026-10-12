@@ -122,3 +122,23 @@ Contains only `2026-09-29 / L3 / 1 / Producto D` (the main file has Producto D a
 
 - The shift is replaced; Producto E's production record is removed.
 - 2 downtime events of Producto E become **orphans** (REQ-005): `Ajuste / Cambio de modelo` 19 min and `Otro` 6 min.
+
+---
+
+## 7. Selected Day (REQ-015)
+
+| Selected day | Expected |
+|---|---|
+| 2026-09-30 (default) | Same as sections 3–5 |
+| 2026-09-28 (first day of A1) | 1 alert: L2 scrap rate 7.14% vs. baseline 3.06% (std 0.232%, 23 days, 2026-09-01 to 2026-09-26), z = 17.55, impact 124.4 pieces, recurrence 1 of 6, score 124. Investigation area: Producto C, 7.8% (shifts 1, 2 and 3). L1 and L3 normal. |
+| 2026-09-10 (A3) | No alerts: every line and metric is "insufficient history" (8 baseline days < 10). A3 cannot be detected with this short history. |
+
+- On 2026-09-28 the deviation (z = 17.55) is much larger than on 2026-09-30 (z = 3.71): the baseline of the 28th does not yet contain the A1 days. This is the "recurring problems raise their own baseline" limitation (REQ-013), seen in the data.
+
+## 8. Review Period (REQ-016)
+
+| Period | Expected |
+|---|---|
+| Día 2026-09-30 (default) | Same as sections 3–5: 3 alerts |
+| Semana del 28-sep al 04-oct | 5 alerts: L2 scrap on 28, 29 and 30-sep; L1 production and L1 unplanned downtime on 30-sep. Rank 1: L2 scrap of 30-sep. Andon: L1 2 alerts, L2 3 alerts, L3 normal. |
+| Mes septiembre 2026 | Every alert of the month; Sep 1–11 are "insufficient history" for every line (10 working days). |

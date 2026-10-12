@@ -232,3 +232,19 @@ def test_downtime_trend_is_unplanned_minutes_per_shift_worked():
     trend = downtime_trend(prod, events, PLANNED, "week")
 
     assert trend.iloc[0]["downtime_per_shift"] == 20  # 40 / 2 shifts worked
+
+
+def test_scrap_heatmap_by_shift_and_day():
+    from src.analytics.kpis import scrap_by_shift_period
+
+    df = production(
+        ("2026-09-28", "L1", 1, "Producto A", 1000, 90),
+        ("2026-09-29", "L1", 1, "Producto A", 1000, 30),
+        ("2026-09-29", "L1", 2, "Producto A", 1000, 20),
+    )
+
+    heatmap = scrap_by_shift_period(df, "day")
+
+    assert heatmap.loc[1, date(2026, 9, 28)] == pytest.approx(0.09)
+    assert heatmap.loc[2, date(2026, 9, 29)] == pytest.approx(0.02)
+    assert pd.isna(heatmap.loc[2, date(2026, 9, 28)])

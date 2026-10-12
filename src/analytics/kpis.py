@@ -271,3 +271,11 @@ def build_kpi_report(conn: sqlite3.Connection, master_dir: Path, filters: KpiFil
         downtime=downtime_kpis(production, events, planned_reasons),
         orphans_excluded=len(orphans),
     )
+
+
+def scrap_by_shift_period(production: pd.DataFrame, grain: str) -> pd.DataFrame:
+    """Scrap rate per shift (rows) × period (columns) at the given grain (REQ-016)."""
+    if production.empty:
+        return pd.DataFrame()
+    with_period = production.assign(period=period_start(production["date"], grain))
+    return _quality_by(with_period, ["shift", "period"]).pivot(index="shift", columns="period", values="scrap_rate")

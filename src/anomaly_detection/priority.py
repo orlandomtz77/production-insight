@@ -35,14 +35,17 @@ def daily_impact(metric: str, day: pd.Series, baseline_mean: float, rate: float 
     raise ValueError(f"Unknown metric '{metric}'.")
 
 
-def last_working_days(daily: pd.DataFrame, count: int = RECURRENCE_WINDOW) -> list[date]:
+def last_working_days(
+    daily: pd.DataFrame, count: int = RECURRENCE_WINDOW, until: date | None = None
+) -> list[date]:
+    """The last `count` Monday–Saturday dates with data, up to `until` (inclusive)."""
     dates = pd.to_datetime(daily["date"].drop_duplicates())
-    working = sorted(dates[dates.dt.weekday != SUNDAY].dt.date)
+    working = sorted(d for d in dates[dates.dt.weekday != SUNDAY].dt.date if until is None or d <= until)
     return working[-count:]
 
 
 def recurrence(
-    daily: pd.DataFrame, evaluation: Evaluation, rate: float | None
+    daily: pd.DataFrame, evaluation: Evaluation, rate: float | None, until: date | None = None
 ) -> tuple[list[date], float]:
     """Days in the last working days beyond the threshold, and their cumulative impact.
 
@@ -52,7 +55,7 @@ def recurrence(
     line_days = daily[daily["line"] == evaluation.line].set_index("date")
 
     days, cumulative = [], 0.0
-    for day in last_working_days(daily):
+    for day in last_working_days(daily, until=until):
         if day.isoformat() not in line_days.index:
             continue
         row = line_days.loc[day.isoformat()]

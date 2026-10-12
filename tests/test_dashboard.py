@@ -10,6 +10,8 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from src.analytics.periods import ReviewPeriod
+
 from src.database.connection import connect
 from src.ingestion.load_downtime import load_downtime_file
 from src.ingestion.load_production import load_production_file
@@ -53,24 +55,26 @@ def test_dashboard_with_sample_data(loaded_db, monkeypatch):
         "Resumen", "Alertas", "Producción", "Calidad", "Paros", "Calidad de datos"
     ]
     metrics = {metric.label: metric.value for metric in app.metric}
-    assert metrics["Scrap rate"] == "3.2%"
+    assert metrics["Scrap rate"] == "4.4%"  # default period: day 2026-09-30
 
 
-def test_summary_names_the_evaluated_day_and_the_period(loaded_db, monkeypatch):
+def test_default_review_is_the_last_working_day(loaded_db, monkeypatch):
     app = run_app(loaded_db, monkeypatch)
 
+    assert app.sidebar.radio[0].value == "day"
+    selector = app.sidebar.selectbox[0]
+    assert selector.value == ReviewPeriod("day", date(2026, 9, 30), date(2026, 9, 30))
+    assert selector.options[0] == "miércoles 30 de septiembre de 2026"
+    assert "domingo 27 de septiembre de 2026" not in selector.options  # Sunday overtime is not offered
     captions = [caption.value for caption in app.caption]
-    assert any("Día evaluado: miércoles 30 de septiembre de 2026. 3 alertas ese día." in c for c in captions)
-    assert any("Acumulado del 1 al 30 de septiembre de 2026" in c for c in captions)
+    assert any("3 alertas del miércoles 30 de septiembre de 2026." in c for c in captions)
 
 
-def test_period_filter_changes_the_period_text(loaded_db, monkeypatch):
+def test_old_time_controls_are_gone(loaded_db, monkeypatch):
     app = run_app(loaded_db, monkeypatch)
 
-    app.sidebar.date_input[0].set_value((date(2026, 9, 7), date(2026, 9, 12))).run()
-
-    assert not app.exception
-    assert any("Acumulado del 7 al 12 de septiembre de 2026" in c.value for c in app.caption)
+    assert len(app.sidebar.date_input) == 0  # "Periodo" filter replaced by "Revisar por"
+    assert [radio.label for radio in app.sidebar.radio] == ["Revisar por"]
 
 
 def test_alerts_table_is_ranked(loaded_db, monkeypatch):
@@ -89,3 +93,38 @@ def test_line_filter_reaches_alerts(loaded_db, monkeypatch):
     assert not app.exception
     alerts = next(df.value for df in app.dataframe if "Prioridad" in df.value.columns)
     assert set(alerts["Línea"]) == {"L1"}
+
+
+def test_selecting_a_day(loaded_db, monkeypatch):
+    app = run_app(loaded_db, monkeypatch)
+
+    app.sidebar.selectbox[0].set_value(ReviewPeriod("day", date(2026, 9, 28), date(2026, 9, 28))).run()
+
+    assert not app.exception
+    assert any("1 alerta del lunes 28 de septiembre de 2026." in c.value for c in app.caption)
+    alerts = next(df.value for df in app.dataframe if "Prioridad" in df.value.columns)
+    assert alerts["Línea"].tolist() == ["L2"]
+
+
+def test_week_review_lists_alerts_of_every_day(loaded_db, monkeypatch):
+    app = run_app(loaded_db, monkeypatch)
+
+    app.sidebar.radio[0].set_value("week").run()
+
+    assert not app.exception
+    assert app.sidebar.selectbox[0].options[0] == "Semana del 28-sep al 04-oct"
+    captions = [caption.value for caption in app.caption]
+    assert any("Acumulado de la semana del 28 de septiembre al 4 de octubre de 2026" in c for c in captions)
+    alerts = next(df.value for df in app.dataframe if "Prioridad" in df.value.columns)
+    assert {"28-sep", "30-sep"} <= set(alerts["Fecha"])
+
+
+def test_month_review(loaded_db, monkeypatch):
+    app = run_app(loaded_db, monkeypatch)
+
+    app.sidebar.radio[0].set_value("month").run()
+
+    assert not app.exception
+    assert app.sidebar.selectbox[0].options == ["septiembre 2026"]
+    assert any("Acumulado de septiembre de 2026" in c.value for c in app.caption)
+

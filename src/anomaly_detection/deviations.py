@@ -50,15 +50,21 @@ class DetectionResult:
         return [e for e in self.evaluations.values() if e.is_deviation]
 
 
+def working_days(daily: pd.DataFrame) -> list[date]:
+    """Monday–Saturday dates with data, newest first (days that can be evaluated)."""
+    dates = pd.to_datetime(daily["date"].drop_duplicates())
+    return sorted(dates[dates.dt.weekday != SUNDAY].dt.date, reverse=True)
+
+
 def evaluated_day(daily: pd.DataFrame) -> date | None:
     """Last Monday–Saturday date with data. Sunday overtime is not evaluated."""
-    dates = pd.to_datetime(daily["date"])
-    working = dates[dates.dt.weekday != SUNDAY]
-    return working.max().date() if not working.empty else None
+    days = working_days(daily)
+    return days[0] if days else None
 
 
-def detect_deviations(daily: pd.DataFrame) -> DetectionResult:
-    day = evaluated_day(daily)
+def detect_deviations(daily: pd.DataFrame, day: date | None = None) -> DetectionResult:
+    """Evaluate `day` (default: the last working day) as if it were the last day with data."""
+    day = day or evaluated_day(daily)
     result = DetectionResult(day)
     if day is None:
         return result

@@ -10,7 +10,7 @@ Production Insight revisa los datos de producción, scrap y paros de tus líneas
 
 1. Prepara dos archivos CSV: **producción** y **paros**.
 2. Abre el dashboard y carga **primero producción, después paros**.
-3. Mira el **tablero de líneas** (arriba): las placas ámbar tienen alertas.
+3. En **Revisar por** elige día, semana o mes (por defecto, el último día con datos) y mira el **tablero de líneas**: las placas ámbar tienen alertas.
 4. Abre la pestaña **Alertas** y empieza por la **prioridad 1**.
 5. Revisa **Dónde investigar** en la ficha de la alerta y ve al piso.
 
@@ -114,7 +114,7 @@ Después de cargar verás:
 | Faltan columnas obligatorias | El archivo no tiene alguna columna o tiene otro nombre | Revisa la primera fila contra la sección 3 |
 | Fecha inválida; el formato es AAAA-MM-DD | Fecha escrita como `30/09/2026` o una fecha que no existe | Escríbela como `2026-09-30` |
 | La fecha es posterior a hoy | Fecha futura | Revisa el año o el mes |
-| La línea / el producto / la causa no está en la lista | Valor mal escrito o nuevo | Corrige el texto o agrégalo a la lista (sección 9) |
+| La línea / el producto / la causa no está en la lista | Valor mal escrito o nuevo | Corrige el texto o agrégalo a la lista (sección 10) |
 | Turno inválido; debe ser 1, 2 o 3 | Turno fuera de rango | Corrige el número |
 | El scrap es mayor que la producción | El scrap supera las piezas procesadas | Revisa ambos números |
 | Registro duplicado en el archivo | Dos filas con la misma fecha, línea, turno y producto | Deja una sola fila con el total |
@@ -124,7 +124,29 @@ Después de cargar verás:
 
 ---
 
-## 5. El tablero de líneas
+## 5. Elegir qué revisar: día, semana o mes
+
+Arriba de la barra lateral está **Revisar por**:
+
+| Opción | Qué revisas | Ejemplo |
+|---|---|---|
+| **Día** | Un día de lunes a sábado | miércoles 30 de septiembre de 2026 |
+| **Semana** | De lunes a domingo | Semana del 28-sep al 04-oct |
+| **Mes** | El mes completo | septiembre 2026 |
+
+Debajo eliges cuál; la lista va del más reciente al más antiguo. Por defecto se abre en **Día**, con el último día hábil con datos.
+
+Lo que elijas cambia **todo el dashboard**: el tablero de líneas, el Resumen, las Alertas y las pestañas Producción, Calidad y Paros. Solo Calidad de datos revisa siempre todo lo cargado.
+
+- **Día:** responde "¿qué pasó ayer?".
+- **Semana:** muestra las alertas de cada día de la semana, con su fecha, y las tendencias día por día. Sirve para la junta semanal y para ver si un problema se repitió.
+- **Mes:** muestra las alertas del mes y las tendencias semana por semana.
+
+Cada día se compara solo contra los días **anteriores** a él, como si fuera el último día con datos. Los primeros días cargados (unas dos semanas) aparecen como "Sin evaluar" porque todavía no tienen suficiente historia.
+
+---
+
+## 6. El tablero de líneas
 
 Arriba de las pestañas hay una placa por línea. Muestra el estado del **día evaluado**:
 
@@ -136,22 +158,19 @@ Arriba de las pestañas hay una placa por línea. Muestra el estado del **día e
 
 ---
 
-## 6. Día evaluado y periodo: dos cosas distintas
+## 7. Siempre sabes qué periodo estás viendo
 
-El dashboard trabaja con **dos periodos de tiempo**, y siempre dice cuál está usando:
+Toda la pantalla usa el periodo elegido en **Revisar por**, y lo dice con palabras:
 
-| Qué | Periodo | Dónde lo ves |
-|---|---|---|
-| **Alertas y tablero de líneas** | **Un día**: el último día hábil con datos (el *día evaluado*) | "Día evaluado: miércoles 30 de septiembre de 2026" |
-| **Indicadores y gráficas** (producción, scrap, paros) | **El periodo de los filtros** (por defecto, todo lo cargado) | "Acumulado del 1 al 30 de septiembre de 2026, según los filtros" |
+- Arriba: "Revisión de la semana del 28 de septiembre al 4 de octubre de 2026".
+- En las pestañas: "Acumulado de la semana del 28 de septiembre al 4 de octubre de 2026, según los filtros".
+- En cada alerta, la fecha exacta: "~115 piezas el 30-sep".
 
-Ejemplo: "7,541 min de paro no programado" es el **acumulado del periodo**, no lo de un día.
-
-El filtro de **periodo** cambia los indicadores, pero **no** las alertas. El filtro de **línea** cambia los dos.
+Los filtros de **línea, producto y turno** se aplican encima del periodo.
 
 ---
 
-## 7. Qué hacer con una alerta
+## 8. Qué hacer con una alerta
 
 ### Cómo se decide que algo es una alerta
 
@@ -201,11 +220,11 @@ Un problema que **se repite** sube de prioridad, porque probablemente sigue acti
 
 ---
 
-## 8. Las pestañas
+## 9. Las pestañas
 
 | Pestaña | Pregunta que responde |
 |---|---|
-| **Resumen** | ¿Cuál es el problema más importante ahora? ¿Cómo va la operación en el periodo? |
+| **Resumen** | ¿Cuál es el problema más importante del periodo? ¿Qué pasó en el periodo? |
 | **Alertas** | ¿Qué investigo primero? ¿Por qué se marcó? ¿Falta algo en la evaluación? |
 | **Producción** | ¿Qué línea, producto o turno produjo más o menos? |
 | **Calidad** | ¿Dónde está el scrap? ¿Está empeorando? ¿Está siempre en el mismo turno? |
@@ -216,7 +235,7 @@ En las gráficas de tendencia puedes agrupar por **día, semana o mes** con el s
 
 ---
 
-## 9. Mantener las listas
+## 10. Mantener las listas
 
 Las listas viven en archivos CSV en `data/master/`. Se editan con Excel o un editor de texto.
 
@@ -243,7 +262,7 @@ Si dejas el turno vacío, aplica a **todo el día**.
 
 ---
 
-## 10. Preguntas frecuentes
+## 11. Preguntas frecuentes
 
 **¿Por qué una línea dice "Sin evaluar"?**
 Necesita al menos 10 días hábiles de historia para saber qué es normal. Con menos, no se generan alertas para esa línea.
@@ -251,8 +270,8 @@ Necesita al menos 10 días hábiles de historia para saber qué es normal. Con m
 **¿Por qué no salió alerta si el scrap estuvo alto?**
 Se compara contra lo normal **de esa misma línea**. Si una línea siempre tiene scrap alto, no es una alerta (es un problema crónico, visible en la pestaña Calidad). Las alertas detectan **cambios**.
 
-**¿Por qué no veo las alertas de días anteriores?**
-Las alertas evalúan solo el último día hábil con datos. Revisar días anteriores es una mejora planeada (IMP-001).
+**¿Cómo veo las alertas de días anteriores o de toda la semana?**
+En **Revisar por** elige Día (y el día) o Semana. Ver sección 5.
 
 **Aparecen "paros sin registro de producción". ¿Qué hago?**
 Pasa cuando recargas producción y un producto desaparece de un turno: sus paros se quedan sin registro. Vuelve a cargar el archivo de paros de ese turno.

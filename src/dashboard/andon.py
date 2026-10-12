@@ -1,4 +1,4 @@
-"""Andon board: one status plate per line for the evaluated day (REQ-014).
+"""Andon board: one status plate per line for the reviewed period (REQ-014, REQ-016).
 
 Status is shown with color + icon + label, never color alone.
 """
@@ -6,10 +6,11 @@ Status is shown with color + icon + label, never color alone.
 import html
 from dataclasses import dataclass
 
-from src.anomaly_detection.alerts import AlertReport
-from src.dashboard.formatting import METRIC_LABELS
+from src.anomaly_detection.alerts import Alert
+from src.dashboard.formatting import METRIC_LABELS, format_period
 
 ALERT, NORMAL, NOT_EVALUATED = "alert", "normal", "not_evaluated"
+MAX_DETAILS = 3
 
 
 @dataclass
@@ -17,23 +18,34 @@ class LineStatus:
     line: str
     state: str
     label: str
-    details: list[str]  # one line per alert, or the reason it was not evaluated
+    details: list[str]  # top alerts, or the reason it was not evaluated
 
 
-def line_statuses(report: AlertReport, lines) -> list[LineStatus]:
+def line_statuses(
+    alerts: list[Alert], evaluated_lines: set[str], lines, show_dates: bool = False
+) -> list[LineStatus]:
+    """State per line: alerts in the period, normal if evaluated without alerts, otherwise not evaluated.
+
+    `show_dates` adds the alert date to each detail (periods longer than one day).
+    """
     statuses = []
     for line in sorted(lines):
-        alerts = [a for a in report.alerts if a.line == line]
-        skipped = [n for n in report.not_evaluated if n[0] == line]
-        if alerts:
-            count = len(alerts)
+        line_alerts = [a for a in alerts if a.line == line]  # already ranked
+        if line_alerts:
+            count = len(line_alerts)
             label = f"{count} alerta" + ("s" if count > 1 else "")
-            details = [f"Prioridad {a.rank}: {METRIC_LABELS[a.metric]}" for a in alerts]
+            details = [
+                f"Prioridad {a.rank}: {METRIC_LABELS[a.metric]}"
+                + (f" ({format_period(a.evaluated_day, 'day')})" if show_dates else "")
+                for a in line_alerts[:MAX_DETAILS]
+            ]
+            if count > MAX_DETAILS:
+                details.append(f"y {count - MAX_DETAILS} más")
             statuses.append(LineStatus(line, ALERT, label, details))
-        elif skipped and len(skipped) == 3:
-            statuses.append(LineStatus(line, NOT_EVALUATED, "Sin evaluar", ["Sin datos suficientes"]))
-        else:
+        elif line in evaluated_lines:
             statuses.append(LineStatus(line, NORMAL, "Normal", ["Dentro de su comportamiento habitual"]))
+        else:
+            statuses.append(LineStatus(line, NOT_EVALUATED, "Sin evaluar", ["Sin datos suficientes"]))
     return statuses
 
 

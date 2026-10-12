@@ -12,7 +12,7 @@ import pandas as pd
 
 from src.anomaly_detection.baselines import calculate_baseline
 from src.anomaly_detection.daily_metrics import daily_line_metrics
-from src.anomaly_detection.deviations import DetectionResult, Evaluation, detect_deviations
+from src.anomaly_detection.deviations import DetectionResult, Evaluation, detect_deviations, working_days
 from src.anomaly_detection.priority import DOWNTIME, PROD, SCRAP, daily_impact, line_rate, recurrence
 from src.database import downtime_repository, production_repository
 from src.ingestion.master_data import load_master_lists
@@ -114,7 +114,7 @@ def build_alerts(
     for evaluation in detection.deviations:
         rate = _line_rate(daily, evaluation, day)
         today = daily[(daily["line"] == evaluation.line) & (daily["date"] == day.isoformat())].iloc[0]
-        days, cumulative = recurrence(daily, evaluation, rate)
+        days, cumulative = recurrence(daily, evaluation, rate, until=day)
         on_day = lambda df: df[(df["line"] == evaluation.line) & (df["date"] == day.isoformat())]
         baseline = evaluation.baseline
 
@@ -150,17 +150,64 @@ def build_alerts(
     return alerts
 
 
-def run_alerts(conn: sqlite3.Connection, master_dir: Path) -> AlertReport:
-    """Alerts always use all stored data; the dashboard may filter them by line (REQ-014)."""
+def _load_inputs(conn: sqlite3.Connection, master_dir: Path):
+    """Daily metrics, production rows and unplanned events, from all stored data."""
     planned_reasons = load_master_lists(master_dir).planned_reasons
     production = production_repository.read_all(conn)
     events = downtime_repository.read_linked_events(conn)
     unplanned = events[~events["downtime_reason"].isin(planned_reasons)]
+    return daily_line_metrics(production, events, planned_reasons), production, unplanned
 
-    daily = daily_line_metrics(production, events, planned_reasons)
-    detection = detect_deviations(daily)
+
+def run_alerts(conn: sqlite3.Connection, master_dir: Path, day: date | None = None) -> AlertReport:
+    """Alerts for `day` (default: the last working day), using all stored data (REQ-014, REQ-015).
+
+    The dashboard may filter them by line.
+    """
+    daily, production, unplanned = _load_inputs(conn, master_dir)
+    detection = detect_deviations(daily, day)
     return AlertReport(
         evaluated_day=detection.evaluated_day,
         alerts=build_alerts(daily, detection, production, unplanned),
         not_evaluated=detection.not_evaluated,
+    )
+
+
+@dataclass
+class PeriodAlertReport:
+    """Alerts of every working day in a period (REQ-016)."""
+
+    start: date
+    end: date
+    evaluated_days: list[date]
+    alerts: list[Alert]                                  # all days, ranked by priority score
+    not_evaluated: list[tuple[str, str, str, int]]       # line, metric, reason, number of days
+    evaluated_lines: set[str]                            # lines evaluated on at least one day
+
+
+def run_alerts_for_period(
+    conn: sqlite3.Connection, master_dir: Path, start: date, end: date
+) -> PeriodAlertReport:
+    """Evaluate each Monday–Saturday day with data in [start, end] (REQ-015 rules per day)."""
+    daily, production, unplanned = _load_inputs(conn, master_dir)
+    days = sorted(d for d in working_days(daily) if start <= d <= end)
+
+    alerts, skipped, evaluated_lines = [], {}, set()
+    for day in days:
+        detection = detect_deviations(daily, day)
+        alerts.extend(build_alerts(daily, detection, production, unplanned))
+        evaluated_lines.update(line for line, _ in detection.evaluations)
+        for item in detection.not_evaluated:
+            skipped[item] = skipped.get(item, 0) + 1
+
+    alerts.sort(key=lambda alert: alert.priority_score, reverse=True)
+    for rank, alert in enumerate(alerts, start=1):
+        alert.rank = rank
+    return PeriodAlertReport(
+        start=start,
+        end=end,
+        evaluated_days=days,
+        alerts=alerts,
+        not_evaluated=[(line, metric, reason, count) for (line, metric, reason), count in sorted(skipped.items())],
+        evaluated_lines=evaluated_lines,
     )

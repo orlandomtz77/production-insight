@@ -1,4 +1,4 @@
-"""Streamlit dashboard (REQ-014). All text shown to the user is in Spanish.
+"""Streamlit dashboard (REQ-014, REQ-016). All text shown to the user is in Spanish.
 
 Each visualization is introduced by the question it answers (CLAUDE.md §15).
 The dashboard only displays results; every calculation lives in src/analytics
@@ -12,8 +12,16 @@ import pandas as pd
 import streamlit as st
 
 from src.analytics.data_quality import build_data_quality_report
-from src.analytics.kpis import KpiFilters, apply_filters, build_kpi_report, downtime_trend, scrap_trend
-from src.anomaly_detection.alerts import run_alerts
+from src.analytics.kpis import (
+    KpiFilters,
+    apply_filters,
+    build_kpi_report,
+    downtime_trend,
+    scrap_by_shift_period,
+    scrap_trend,
+)
+from src.analytics.periods import ReviewPeriod, available_periods, trend_grain
+from src.anomaly_detection.alerts import run_alerts_for_period
 from src.anomaly_detection.baselines import METRICS
 from src.dashboard import charts
 from src.dashboard.andon import alert_card_html, andon_html, line_statuses
@@ -25,11 +33,11 @@ from src.dashboard.formatting import (
     alert_title,
     format_metric_value,
     format_minutes,
-    format_date_range,
-    format_long_date,
     format_number,
     format_percent,
     format_period,
+    period_label,
+    period_phrase,
 )
 from src.database import downtime_repository, production_repository
 from src.database.connection import DEFAULT_DB_PATH, connect
@@ -69,17 +77,27 @@ def _upload_section(conn, master_dir) -> None:
         uploaded = st.sidebar.file_uploader(label, type="csv", key=key)
         if st.sidebar.button(button, disabled=uploaded is None, width="stretch"):
             st.session_state["last_load"] = (name, loader(uploaded, uploaded.name, conn, master_dir))
+            st.rerun()  # refresh "Revisar por" and every view with the new data
 
 
-def _filters_section(production: pd.DataFrame, master) -> tuple[KpiFilters, str]:
+def _period_selector(all_production: pd.DataFrame) -> ReviewPeriod | None:
+    """REQ-016: one control for the whole dashboard: day, week or month."""
+    if all_production.empty:
+        return None
+    dates = pd.to_datetime(all_production["date"]).dt.date.unique()
+    st.sidebar.header("Revisar por")
+    grain = st.sidebar.radio("Revisar por", list(GRAIN_LABELS), format_func=GRAIN_LABELS.get,
+                             horizontal=True, label_visibility="collapsed")
+    periods = available_periods(dates, grain)
+    return st.sidebar.selectbox(
+        "Periodo a revisar", periods, format_func=period_label, label_visibility="collapsed",
+        help="Del más reciente al más antiguo. Los días son de lunes a sábado.",
+    )
+
+
+def _filters_section(master) -> KpiFilters:
     st.sidebar.header("Filtros")
     filters = KpiFilters()
-    if not production.empty:
-        first = pd.to_datetime(production["date"]).min().date()
-        last = pd.to_datetime(production["date"]).max().date()
-        period = st.sidebar.date_input("Periodo", value=(first, last), min_value=first, max_value=last)
-        if isinstance(period, (tuple, list)) and period:
-            filters.start, filters.end = period[0], period[-1]
 
     def multiselect(label, options):
         selected = st.sidebar.multiselect(label, options, default=options)
@@ -88,9 +106,7 @@ def _filters_section(production: pd.DataFrame, master) -> tuple[KpiFilters, str]
     filters.lines = multiselect("Línea", sorted(master.lines))
     filters.products = multiselect("Producto", sorted(master.products))
     filters.shifts = multiselect("Turno", [1, 2, 3])
-    grain = st.sidebar.radio("Agrupar tendencias por", list(GRAIN_LABELS),
-                             format_func=GRAIN_LABELS.get, horizontal=True, index=1)
-    return filters, grain
+    return filters
 
 
 # --- Load result -------------------------------------------------------------------
@@ -131,48 +147,51 @@ def _show_last_load() -> None:
 
 # --- Tabs --------------------------------------------------------------------------
 
-def _period_caption(period_text: str) -> None:
-    st.caption(f"Acumulado {period_text}, según los filtros.")
+def _period_caption(phrase: str) -> None:
+    st.caption(f"Acumulado {phrase}, según los filtros.")
 
 
-def _tab_summary(kpis, alert_report, period_text: str) -> None:
-    # Two time scopes, each named: the evaluated day (alerts) and the filtered period (KPIs).
-    _question("¿Cuál es el problema más importante ahora?")
-    day = alert_report.evaluated_day
+def _tab_summary(kpis, alert_report, phrase: str) -> None:
+    # One time scope: the reviewed period (REQ-016).
+    _question("¿Cuál es el problema más importante?")
     count = len(alert_report.alerts)
-    st.caption(f"Día evaluado: {format_long_date(day)}. "
-               f"{count} alerta{'s' if count != 1 else ''} ese día.")
+    st.caption(f"{count} alerta{'s' if count != 1 else ''} {phrase}.")
     if not alert_report.alerts:
-        st.info("Ninguna línea se desvió de lo normal en el día evaluado.")
+        st.info("Ninguna línea se desvió de lo normal en este periodo.")
     else:
         top = alert_report.alerts[0]
         st.html(alert_card_html(alert_title(top), alert_facts(top)))
+        if count > 1:
+            st.caption(f"Las otras {count - 1} alertas están en la pestaña Alertas.")
 
-    _question("¿Cómo va la operación en el periodo?")
-    _period_caption(period_text)
+    _question(f"¿Qué pasó {phrase}?")
+    st.caption("Según los filtros de línea, producto y turno.")
+    if not kpis.has_data:
+        st.info("No hay producción en este periodo para estos filtros.")
+        return
     cols = st.columns(3)
-    cols[0].metric("Producción total", f"{format_number(kpis.production.total)} piezas")
+    cols[0].metric("Producción", f"{format_number(kpis.production.total)} piezas")
     cols[1].metric("Scrap rate", format_percent(kpis.quality.scrap_rate))
     cols[2].metric("Paro no programado", f"{format_number(kpis.downtime.unplanned_total)} min",
-                   help=f"{format_minutes(kpis.downtime.unplanned_total)} acumulados en el periodo")
+                   help=format_minutes(kpis.downtime.unplanned_total))
 
 
-def _tab_alerts(alert_report, filters: KpiFilters) -> None:
-    day = alert_report.evaluated_day
+def _tab_alerts(alert_report, filters: KpiFilters, phrase: str) -> None:
     st.caption(
-        f"Día evaluado: {day.isoformat() if day else 'N/A'} (último día hábil con datos). "
-        "El filtro de periodo no cambia las alertas; el filtro de línea sí."
+        f"Alertas {phrase}: se evalúa cada día hábil del periodo contra los días anteriores. "
+        "El periodo se cambia en \"Revisar por\"; el filtro de línea también aplica."
     )
     alerts = [a for a in alert_report.alerts if filters.lines is None or a.line in filters.lines]
 
     _question("¿Qué problema debo investigar primero?")
     if not alerts:
-        st.info("Ninguna línea se desvió de lo normal en el día evaluado.")
+        st.info("Ninguna línea se desvió de lo normal en este periodo.")
     else:
         table = pd.DataFrame(
             [
                 {
                     "Prioridad": a.rank,
+                    "Fecha": format_period(a.evaluated_day, "day"),
                     "Línea": a.line,
                     "Problema": METRIC_LABELS[a.metric],
                     "Valor actual": format_metric_value(a.metric, a.value, compact=True),
@@ -201,8 +220,9 @@ def _tab_alerts(alert_report, filters: KpiFilters) -> None:
     if not_evaluated:
         st.dataframe(
             pd.DataFrame(
-                [(line, METRIC_LABELS[m], NOT_EVALUATED_REASONS[r]) for line, m, r in not_evaluated],
-                columns=["Línea", "Métrica", "Motivo"],
+                [(line, METRIC_LABELS[m], NOT_EVALUATED_REASONS[r], days)
+                 for line, m, r, days in not_evaluated],
+                columns=["Línea", "Métrica", "Motivo", "Días"],
             ),
             hide_index=True,
             width="stretch",
@@ -243,6 +263,9 @@ def _tab_quality(kpis, production_rows, colors, grain, mode) -> None:
                           quality.by_shift["scrap_rate"], mode, percent=True))
 
     _question("¿El problema es recurrente o está empeorando?")
+    if grain is None:
+        st.caption("Para ver la tendencia y el mapa por turno, revisa por Semana o Mes.")
+        return
     trend = scrap_trend(production_rows, grain)
     labels = {p: format_period(p, grain) for p in trend["period"].unique()}
     _chart(charts.trend(trend, labels, "scrap_rate", colors, mode, percent=True))
@@ -254,12 +277,14 @@ def _tab_quality(kpis, production_rows, colors, grain, mode) -> None:
         )
 
     _question("¿El problema está siempre en el mismo turno?")
-    heat = quality.by_shift_week
+    heat = scrap_by_shift_period(production_rows, grain)
     if not heat.empty:
         _chart(charts.heatmap(heat, [f"Turno {s}" for s in heat.index],
-                              [format_period(w, "week") for w in heat.columns], mode))
-        st.caption("Cada semana empieza en lunes; la primera y la última pueden estar incompletas. "
-                   "Celda vacía: el turno no trabajó esa semana.")
+                              [format_period(p, grain) for p in heat.columns], mode))
+        unit = "ese día" if grain == "day" else "esa semana"
+        note = ("Cada semana empieza en lunes; la primera y la última pueden estar incompletas. "
+                if grain == "week" else "")
+        st.caption(f"{note}Celda vacía: el turno no trabajó {unit}.")
 
 
 def _tab_downtime(kpis, production_rows, events, planned_reasons, colors, grain, mode) -> None:
@@ -295,6 +320,9 @@ def _tab_downtime(kpis, production_rows, events, planned_reasons, colors, grain,
         _chart(charts.bar(downtime.by_product["product"], downtime.by_product["downtime"], mode))
 
     _question("¿El paro no programado está aumentando?")
+    if grain is None:
+        st.caption("Para ver la tendencia, revisa por Semana o Mes.")
+        return
     trend = downtime_trend(production_rows, events, planned_reasons, grain)
     labels = {p: format_period(p, grain) for p in trend["period"].unique()}
     _chart(charts.trend(trend, labels, "downtime_per_shift", colors, mode, unit=" min"))
@@ -369,30 +397,30 @@ def main() -> None:
 
     conn = connect(db_path)
     try:
-        _upload_section(conn, master_dir)
         all_production = production_repository.read_all(conn)
-        filters, grain = _filters_section(all_production, master)
+        period = _period_selector(all_production)
+        _upload_section(conn, master_dir)
+        filters = _filters_section(master)
         _show_last_load()
 
-        if all_production.empty:
+        if period is None:
             st.info(NO_DATA)
             return
 
+        filters.start, filters.end = period.start, period.end
+        grain = trend_grain(period.grain)
+        phrase = period_phrase(period)
         mode = _theme_mode()
         colors = charts.line_colors(master.lines, mode)
         kpis = build_kpi_report(conn, master_dir, filters)
-        alert_report = run_alerts(conn, master_dir)
+        alert_report = run_alerts_for_period(conn, master_dir, period.start, period.end)
         quality_report = build_data_quality_report(conn, master_dir)
         production_rows = apply_filters(all_production, filters)
         events = apply_filters(downtime_repository.read_linked_events(conn), filters)
-        dates = pd.to_datetime(all_production["date"]).dt.date
-        period_text = format_date_range(filters.start or dates.min(), filters.end or dates.max())
 
-        day = alert_report.evaluated_day
-        if day:
-            st.caption(f"Revisión del {format_long_date(day)}, último día hábil con datos. "
-                       "Dónde investigar primero y por qué.")
-        st.html(andon_html(line_statuses(alert_report, master.lines)))
+        st.caption(f"Revisión {phrase}. Dónde investigar primero y por qué.")
+        st.html(andon_html(line_statuses(alert_report.alerts, alert_report.evaluated_lines, master.lines,
+                                         show_dates=period.grain != "day")))
         if kpis.orphans_excluded:
             st.caption(f"{kpis.orphans_excluded} paros sin registro de producción se excluyen de los KPIs "
                        "(ver Calidad de datos).")
@@ -401,21 +429,21 @@ def main() -> None:
         with tabs[5]:
             _tab_data_quality(quality_report)
         with tabs[1]:
-            _tab_alerts(alert_report, filters)
-        if not kpis.has_data:
-            for tab in (tabs[0], tabs[2], tabs[3], tabs[4]):
-                tab.info("No hay datos para estos filtros.")
-            return
+            _tab_alerts(alert_report, filters, phrase)
         with tabs[0]:
-            _tab_summary(kpis, alert_report, period_text)
+            _tab_summary(kpis, alert_report, phrase)
+        if not kpis.has_data:
+            for tab in (tabs[2], tabs[3], tabs[4]):
+                tab.info("No hay datos en este periodo para estos filtros.")
+            return
         with tabs[2]:
-            _period_caption(period_text)
+            _period_caption(phrase)
             _tab_production(kpis, mode)
         with tabs[3]:
-            _period_caption(period_text)
+            _period_caption(phrase)
             _tab_quality(kpis, production_rows, colors, grain, mode)
         with tabs[4]:
-            _period_caption(period_text)
+            _period_caption(phrase)
             _tab_downtime(kpis, production_rows, events, master.planned_reasons, colors, grain, mode)
     finally:
         conn.close()

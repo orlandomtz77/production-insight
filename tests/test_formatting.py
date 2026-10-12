@@ -124,3 +124,22 @@ def test_format_date_range(start, end, expected):
     from src.dashboard.formatting import format_date_range
 
     assert format_date_range(start, end) == expected
+
+
+@pytest.mark.parametrize(
+    ("grain", "start", "end", "label", "phrase"),
+    [
+        ("day", date(2026, 9, 30), date(2026, 9, 30),
+         "miércoles 30 de septiembre de 2026", "del miércoles 30 de septiembre de 2026"),
+        ("week", date(2026, 9, 28), date(2026, 10, 4),
+         "Semana del 28-sep al 04-oct", "de la semana del 28 de septiembre al 4 de octubre de 2026"),
+        ("month", date(2026, 9, 1), date(2026, 9, 30), "septiembre 2026", "de septiembre de 2026"),
+    ],
+)
+def test_period_label_and_phrase(grain, start, end, label, phrase):
+    from src.analytics.periods import ReviewPeriod
+    from src.dashboard.formatting import period_label, period_phrase
+
+    period = ReviewPeriod(grain, start, end)
+    assert period_label(period) == label
+    assert period_phrase(period) == phrase

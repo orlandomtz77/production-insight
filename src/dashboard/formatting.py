@@ -131,3 +131,23 @@ def format_date_range(start, end) -> str:
     if start.month != end.month:
         return f"del {start.day} de {month(start)} al {end.day} de {month(end)} de {end.year}"
     return f"del {start.day} al {end.day} de {month(end)} de {end.year}"
+
+
+def period_label(period) -> str:
+    """Option text in "Revisar por": 'miércoles 30 de septiembre de 2026', 'Semana del 28-sep al 04-oct',
+    'septiembre 2026'."""
+    if period.grain == "day":
+        return format_long_date(period.start)
+    if period.grain == "week":
+        return f"Semana del {format_period(period.start, 'day')} al {format_period(period.end, 'day')}"
+    return f"{MONTH_NAMES[period.start.month - 1]} {period.start.year}"
+
+
+def period_phrase(period) -> str:
+    """Phrase used in sentences: 'del miércoles 30 de septiembre de 2026',
+    'de la semana del 28 de septiembre al 4 de octubre de 2026', 'de septiembre de 2026'."""
+    if period.grain == "day":
+        return f"del {format_long_date(period.start)}"
+    if period.grain == "week":
+        return f"de la semana {format_date_range(period.start, period.end)}"
+    return f"de {MONTH_NAMES[period.start.month - 1]} de {period.start.year}"

@@ -23,6 +23,8 @@
 | REQ-012 | Generate Explainable Alerts | Implemented (logic + tests; dashboard UI pending) |
 | REQ-013 | Calculate Priority Scores | Implemented (logic + tests; dashboard UI pending) |
 | REQ-014 | Display Dashboard | Implemented (smoke tests; visual review) |
+| REQ-015 | Review a Selected Day | Implemented; selector replaced by REQ-016 |
+| REQ-016 | Review Period: Day, Week or Month | Implemented (logic + tests; dashboard) |
 
 Merged IDs are kept (not reused) so references stay stable.
 
@@ -1120,6 +1122,139 @@ streamlit run app.py
 
 - **Master list values:** resolved — master lists contain the values as captured by supervisors, in Spanish (e.g., `Falla de máquina`). They are shown in the dashboard as stored.
 
+
+---
+
+## REQ-015: Review a Selected Day
+
+From IMP-001. Decided 2026-10-12.
+
+> **Updated by REQ-016:** the "Día a revisar" selector is replaced by the "Revisar por" control. The detection rules below still apply to every evaluated day.
+
+### Problem
+
+Alerts only evaluate the last working day with data. After loading last week's data, or when preparing a weekly review, the supervisor cannot see what happened on an earlier day or which problems should have been investigated then.
+
+### Input
+
+- The selected day.
+- Stored production records and downtime events.
+
+### Process
+
+#### Day selector
+
+- **"Día a revisar"** at the top of the sidebar, before the filters.
+- Options: every **Monday–Saturday** date with production data, newest first. Sundays are not offered (overtime is not evaluated, REQ-011).
+- Default: the last working day with data (the current behavior).
+
+#### What the selected day changes
+
+| Element | Uses |
+|---|---|
+| Andon board | Selected day |
+| Resumen tab | **Only the selected day**: alerts, priority 1 card and the day's indicators |
+| Alertas tab | Selected day |
+| Producción, Calidad, Paros tabs | The period of the filters (unchanged) |
+| Calidad de datos tab | All data (unchanged) |
+
+One time scope per screen: the Resumen no longer shows the period totals (they stay in the Producción, Calidad and Paros tabs).
+
+#### Detection for an earlier day
+
+The rules of REQ-010, REQ-011 and REQ-013 apply **as if the selected day were the last day with data**:
+
+- Baseline: Monday–Saturday days **before** the selected day. Later days are never used.
+- Recurrence: the last 6 working days **up to** the selected day.
+- Lines with fewer than 10 baseline days are "Sin evaluar". In practice, the first two weeks of the loaded data cannot be evaluated.
+
+#### Day indicators (Resumen)
+
+Production, scrap rate and unplanned downtime of the selected day, respecting the line, product and shift filters (the period filter does not apply).
+
+### Output
+
+The dashboard shows what happened on the selected day and what to investigate first for that day.
+
+### Acceptance Criteria
+
+```text
+[ ] The sidebar offers every Monday–Saturday date with data, newest first; default is the last one.
+[ ] Selecting a day updates the andon board, the Resumen and the Alertas tab.
+[ ] The Resumen shows only the selected day: alerts, priority 1 card and day indicators.
+[ ] Producción, Calidad and Paros keep using the period filter.
+[ ] The baseline of a selected day never includes that day or later days.
+[ ] Recurrence counts the 6 working days up to the selected day.
+[ ] Sample dataset, 2026-09-30: same alerts as REQ-011 / REQ-013 (no regression).
+[ ] Sample dataset, 2026-09-28: only the L2 scrap alert (A1 first day), recurrence 1 of 6.
+[ ] Sample dataset, 2026-09-10 (A3): no alerts; all lines "Sin evaluar" (fewer than 10 baseline days).
+```
+
+### Dependencies
+
+- REQ-010 to REQ-014.
+
+### Known Limitation
+
+- An anomaly in the first ~2 weeks of data cannot be detected (A3 on 2026-09-10 is an example). It becomes detectable only with a longer history.
+
+
+---
+
+## REQ-016: Review Period: Day, Week or Month
+
+Decided 2026-10-12, from user testing of REQ-015.
+
+### Problem
+
+After REQ-015 the Resumen shows only one day, and the time controls overlap: "Día a revisar", the "Periodo" date filter and "Agrupar tendencias por". The supervisor cannot get a general view of a week or a month with the same logic.
+
+### Process
+
+#### One time control
+
+The sidebar has a single control at the top, **"Revisar por"**:
+
+| Option | Choices | Example label |
+|---|---|---|
+| Día | Every Monday–Saturday date with data | miércoles 30 de septiembre de 2026 |
+| Semana | Every week (Monday–Sunday) with data | Semana del 28-sep al 4-oct |
+| Mes | Every month with data | septiembre 2026 |
+
+Newest first; the default is **Día**, last working day with data.
+
+It **replaces** the "Día a revisar" selector (REQ-015), the "Periodo" date filter and the "Agrupar tendencias por" control (REQ-014). Line, product and shift filters stay.
+
+#### What the selected period drives
+
+| Element | Behavior |
+|---|---|
+| Resumen | Alerts of the period and indicators of the period |
+| Andon board | Alerts of the period, counted per line |
+| Alertas tab | Every alert of the period, with its date |
+| Producción, Calidad, Paros | Indicators and charts of the period |
+| Trends and heatmap | Automatic grain: Semana → by day; Mes → by week; Día → trends hidden (one point) |
+| Calidad de datos | All data (unchanged) |
+
+#### Alerts of a period
+
+- Every Monday–Saturday day of the period with data is evaluated with the rules of REQ-010 to REQ-013 (REQ-015: each day as if it were the last day with data).
+- All alerts of the period are listed together, sorted by priority score (highest first) and ranked 1, 2, 3…
+- Lines and metrics not evaluated are summarized per line and reason, with the number of days.
+
+### Acceptance Criteria
+
+```text
+[ ] "Revisar por" offers Día, Semana and Mes; each lists the periods with data, newest first.
+[ ] Default: Día, last working day with data.
+[ ] The "Día a revisar" selector, the "Periodo" filter and "Agrupar tendencias por" no longer exist.
+[ ] Resumen, andon board, Alertas, Producción, Calidad and Paros use the selected period.
+[ ] Week and month views list every alert of the period with its date, sorted by priority score.
+[ ] Trend charts use day grain for a week and week grain for a month; they are hidden for a single day.
+[ ] Sample dataset, week of 2026-09-28: includes the L2 scrap alert of the 28th and the three alerts of the 30th.
+[ ] Sample dataset, Día 2026-09-30: same alerts as REQ-011 / REQ-013.
+```
+
 ---
 
 ## Future Improvements (not in the MVP)
@@ -1128,7 +1263,7 @@ Ideas identified during the MVP. Each one must go through the normal workflow (p
 
 | ID | Improvement | Origin | Why it is not in the MVP |
 |---|---|---|---|
-| IMP-001 | **Date selector for alerts**: choose which day to evaluate in the Alertas tab, to review alerts of past days (e.g., after loading last week's data). Baseline = working days before the selected day; recurrence = 6 working days up to that day. | REQ-014 design review, 2026-10-12 | The MVP answers "what happened on the last working day?" (REQ-011). The detection logic already accepts any evaluated day internally; the change is mainly UI + tests. |
+| IMP-001 | **Date selector for alerts** — promoted to REQ-015 on 2026-10-12: choose which day to evaluate in the Alertas tab, to review alerts of past days (e.g., after loading last week's data). Baseline = working days before the selected day; recurrence = 6 working days up to that day. | REQ-014 design review, 2026-10-12 | The MVP answers "what happened on the last working day?" (REQ-011). The detection logic already accepts any evaluated day internally; the change is mainly UI + tests. |
 | IMP-002 | Baselines per product or per line + shift | REQ-010 open point | Products do not run every day; their daily history is sparse with one month of data. |
 | IMP-003 | Cost per product (impact in money, not pieces) | REQ-013 known limitation | Requires a cost list that does not exist yet. |
 | IMP-004 | Holiday / planned stop maintenance screen | ADR-005 | `planned_stops.csv` is edited manually for now. |
