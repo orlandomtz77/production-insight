@@ -25,6 +25,7 @@ from src.dashboard.formatting import (
     alert_title,
     format_metric_value,
     format_minutes,
+    format_date_range,
     format_long_date,
     format_number,
     format_percent,
@@ -130,20 +131,30 @@ def _show_last_load() -> None:
 
 # --- Tabs --------------------------------------------------------------------------
 
-def _tab_summary(kpis, alert_report) -> None:
-    cols = st.columns(4)
+def _period_caption(period_text: str) -> None:
+    st.caption(f"Acumulado {period_text}, según los filtros.")
+
+
+def _tab_summary(kpis, alert_report, period_text: str) -> None:
+    # Two time scopes, each named: the evaluated day (alerts) and the filtered period (KPIs).
+    _question("¿Cuál es el problema más importante ahora?")
+    day = alert_report.evaluated_day
+    count = len(alert_report.alerts)
+    st.caption(f"Día evaluado: {format_long_date(day)}. "
+               f"{count} alerta{'s' if count != 1 else ''} ese día.")
+    if not alert_report.alerts:
+        st.info("Ninguna línea se desvió de lo normal en el día evaluado.")
+    else:
+        top = alert_report.alerts[0]
+        st.html(alert_card_html(alert_title(top), alert_facts(top)))
+
+    _question("¿Cómo va la operación en el periodo?")
+    _period_caption(period_text)
+    cols = st.columns(3)
     cols[0].metric("Producción total", f"{format_number(kpis.production.total)} piezas")
     cols[1].metric("Scrap rate", format_percent(kpis.quality.scrap_rate))
     cols[2].metric("Paro no programado", f"{format_number(kpis.downtime.unplanned_total)} min",
-                   help=format_minutes(kpis.downtime.unplanned_total))
-    cols[3].metric("Alertas", len(alert_report.alerts))
-
-    _question("¿Cuál es el problema más importante ahora?")
-    if not alert_report.alerts:
-        st.info("Ninguna línea se desvió de lo normal en el día evaluado.")
-        return
-    top = alert_report.alerts[0]
-    st.html(alert_card_html(alert_title(top), alert_facts(top)))
+                   help=f"{format_minutes(kpis.downtime.unplanned_total)} acumulados en el periodo")
 
 
 def _tab_alerts(alert_report, filters: KpiFilters) -> None:
@@ -374,6 +385,8 @@ def main() -> None:
         quality_report = build_data_quality_report(conn, master_dir)
         production_rows = apply_filters(all_production, filters)
         events = apply_filters(downtime_repository.read_linked_events(conn), filters)
+        dates = pd.to_datetime(all_production["date"]).dt.date
+        period_text = format_date_range(filters.start or dates.min(), filters.end or dates.max())
 
         day = alert_report.evaluated_day
         if day:
@@ -394,12 +407,15 @@ def main() -> None:
                 tab.info("No hay datos para estos filtros.")
             return
         with tabs[0]:
-            _tab_summary(kpis, alert_report)
+            _tab_summary(kpis, alert_report, period_text)
         with tabs[2]:
+            _period_caption(period_text)
             _tab_production(kpis, mode)
         with tabs[3]:
+            _period_caption(period_text)
             _tab_quality(kpis, production_rows, colors, grain, mode)
         with tabs[4]:
+            _period_caption(period_text)
             _tab_downtime(kpis, production_rows, events, master.planned_reasons, colors, grain, mode)
     finally:
         conn.close()

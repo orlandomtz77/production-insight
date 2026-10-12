@@ -54,15 +54,22 @@ def format_shifts(shifts: list[int]) -> str:
     return f"turnos {', '.join(numbers[:-1])} y {numbers[-1]}"
 
 
+def _evaluated(alert: Alert) -> str:
+    """The evaluated day, named explicitly ('el 30-sep') so it is never confused with the period."""
+    return f"el {format_period(alert.evaluated_day, 'day')}"
+
+
 def investigation_text(alert: Alert) -> str:
     area = alert.investigation
     shifts = format_shifts(area.shifts)
+    day = _evaluated(alert)
     if alert.metric == SCRAP:
-        return f"{area.focus} en {alert.line}, con scrap rate de {format_percent(area.value)} ese día ({shifts})."
+        return f"{area.focus} en {alert.line}, con scrap rate de {format_percent(area.value)} {day} ({shifts})."
     if alert.metric == DOWNTIME:
-        return f"{area.focus}: {format_minutes(area.value)} ese día en {alert.line}, sobre todo en el {shifts}."
+        return f"{area.focus}: {format_minutes(area.value)} {day} en {alert.line}, sobre todo en el {shifts}."
     cause = f"; causa principal de paro no programado: {area.focus}" if area.focus else ""
-    return f"{shifts.capitalize()} de {alert.line} (producción más baja del día){cause}."
+    lowest = f"producción más baja del {format_period(alert.evaluated_day, 'day')}"
+    return f"{shifts.capitalize()} de {alert.line} ({lowest}){cause}."
 
 
 def alert_facts(alert: Alert) -> list[tuple[str, str]]:
@@ -75,7 +82,7 @@ def alert_facts(alert: Alert) -> list[tuple[str, str]]:
          f"días hábiles, {alert.baseline_first_day.isoformat()} a {alert.baseline_last_day.isoformat()})"),
         ("Desviación", f"{sign}{alert.percent_deviation:.1f}% ({abs(alert.z):.1f} desviaciones estándar)"),
         ("Impacto",
-         f"~{format_number(alert.daily_impact)} piezas ese día (~{format_number(alert.cumulative_impact)} "
+         f"~{format_number(alert.daily_impact)} piezas {_evaluated(alert)} (~{format_number(alert.cumulative_impact)} "
          f"piezas en los últimos {RECURRENCE_WINDOW} días hábiles)"),
         ("Recurrencia", f"{alert.frequency} de los últimos {RECURRENCE_WINDOW} días hábiles"),
         ("Dónde investigar", investigation_text(alert)),
@@ -112,3 +119,15 @@ MONTH_NAMES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "
 def format_long_date(day) -> str:
     """'miércoles 30 de septiembre de 2026'."""
     return f"{WEEKDAYS[day.weekday()]} {day.day} de {MONTH_NAMES[day.month - 1]} de {day.year}"
+
+
+def format_date_range(start, end) -> str:
+    """'del 1 al 30 de septiembre de 2026'; repeats month and year only when they change."""
+    month = lambda d: MONTH_NAMES[d.month - 1]
+    if start == end:
+        return f"del {end.day} de {month(end)} de {end.year}"
+    if start.year != end.year:
+        return f"del {start.day} de {month(start)} de {start.year} al {end.day} de {month(end)} de {end.year}"
+    if start.month != end.month:
+        return f"del {start.day} de {month(start)} al {end.day} de {month(end)} de {end.year}"
+    return f"del {start.day} al {end.day} de {month(end)} de {end.year}"

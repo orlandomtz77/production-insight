@@ -53,8 +53,24 @@ def test_dashboard_with_sample_data(loaded_db, monkeypatch):
         "Resumen", "Alertas", "Producción", "Calidad", "Paros", "Calidad de datos"
     ]
     metrics = {metric.label: metric.value for metric in app.metric}
-    assert metrics["Alertas"] == "3"
     assert metrics["Scrap rate"] == "3.2%"
+
+
+def test_summary_names_the_evaluated_day_and_the_period(loaded_db, monkeypatch):
+    app = run_app(loaded_db, monkeypatch)
+
+    captions = [caption.value for caption in app.caption]
+    assert any("Día evaluado: miércoles 30 de septiembre de 2026. 3 alertas ese día." in c for c in captions)
+    assert any("Acumulado del 1 al 30 de septiembre de 2026" in c for c in captions)
+
+
+def test_period_filter_changes_the_period_text(loaded_db, monkeypatch):
+    app = run_app(loaded_db, monkeypatch)
+
+    app.sidebar.date_input[0].set_value((date(2026, 9, 7), date(2026, 9, 12))).run()
+
+    assert not app.exception
+    assert any("Acumulado del 7 al 12 de septiembre de 2026" in c.value for c in app.caption)
 
 
 def test_alerts_table_is_ranked(loaded_db, monkeypatch):

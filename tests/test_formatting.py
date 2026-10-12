@@ -101,3 +101,26 @@ def test_alert_card_escapes_and_separates_where_to_investigate():
 
     assert "L2 &lt;test&gt;" in card
     assert '<div class="alert-focus"><strong>Dónde investigar:</strong>' in card
+
+
+def test_alert_message_names_the_evaluated_day_instead_of_ese_dia():
+    message = alert_message(scrap_alert())
+
+    assert "ese día" not in message
+    assert "9.0% el 30-sep" in message or "el 30-sep" in message
+    assert "115 piezas el 30-sep" in message
+
+
+@pytest.mark.parametrize(
+    ("start", "end", "expected"),
+    [
+        (date(2026, 9, 1), date(2026, 9, 30), "del 1 al 30 de septiembre de 2026"),
+        (date(2026, 8, 28), date(2026, 9, 3), "del 28 de agosto al 3 de septiembre de 2026"),
+        (date(2025, 12, 29), date(2026, 1, 2), "del 29 de diciembre de 2025 al 2 de enero de 2026"),
+        (date(2026, 9, 30), date(2026, 9, 30), "del 30 de septiembre de 2026"),
+    ],
+)
+def test_format_date_range(start, end, expected):
+    from src.dashboard.formatting import format_date_range
+
+    assert format_date_range(start, end) == expected
