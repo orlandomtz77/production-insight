@@ -92,3 +92,12 @@ def test_format_long_date():
 
     assert format_long_date(date(2026, 9, 30)) == "miércoles 30 de septiembre de 2026"
 
+
+def test_alert_card_escapes_and_separates_where_to_investigate():
+    from src.dashboard.andon import alert_card_html
+    from src.dashboard.formatting import alert_facts
+
+    card = alert_card_html("L2 <test>", alert_facts(scrap_alert()))
+
+    assert "L2 &lt;test&gt;" in card
+    assert '<div class="alert-focus"><strong>Dónde investigar:</strong>' in card

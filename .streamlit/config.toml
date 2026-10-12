@@ -1,6 +1,24 @@
+# Visual identity: plant-floor shift review (andon boards, industrial signage).
 [theme]
-# Slot 1 of the validated chart palette, so controls do not compete with alert colors.
-primaryColor = "#2a78d6"
+base = "light"
+primaryColor = "#2a78d6"            # line blue: slot 1 of the validated chart palette
+backgroundColor = "#EEF1F3"         # concrete
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#1D2731"               # graphite
+borderColor = "#D3D9DE"
+showWidgetBorder = true
+baseRadius = "4px"
+buttonRadius = "4px"
+font = "Barlow:https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&display=swap"
+headingFont = "Barlow Condensed:https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&display=swap"
+headingFontWeights = [700, 600, 600, 600, 600, 600]
+metricValueFontSize = "2.25rem"
+metricValueFontWeight = 600
+dataframeHeaderBackgroundColor = "#F5F7F8"
+
+[theme.sidebar]
+backgroundColor = "#E3E8EC"
+secondaryBackgroundColor = "#FFFFFF"
 
 [browser]
 gatherUsageStats = false

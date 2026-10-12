@@ -16,10 +16,12 @@ from src.analytics.kpis import KpiFilters, apply_filters, build_kpi_report, down
 from src.anomaly_detection.alerts import run_alerts
 from src.anomaly_detection.baselines import METRICS
 from src.dashboard import charts
+from src.dashboard.andon import alert_card_html, andon_html, line_statuses
+from src.dashboard.styles import CSS
 from src.dashboard.formatting import (
     GRAIN_LABELS,
     NOT_EVALUATED_REASONS,
-    alert_message,
+    alert_facts,
     alert_title,
     format_metric_value,
     format_minutes,
@@ -141,7 +143,7 @@ def _tab_summary(kpis, alert_report) -> None:
         st.info("Ninguna línea se desvió de lo normal en el día evaluado.")
         return
     top = alert_report.alerts[0]
-    st.warning(f"**Prioridad 1: {alert_title(top)}**  \n" + alert_message(top).replace("\n", "  \n"), icon="⚠️")
+    st.html(alert_card_html(alert_title(top), alert_facts(top)))
 
 
 def _tab_alerts(alert_report, filters: KpiFilters) -> None:
@@ -176,7 +178,7 @@ def _tab_alerts(alert_report, filters: KpiFilters) -> None:
         _question("¿Por qué se marcó y por dónde empiezo?")
         for alert in alerts:
             with st.expander(f"{alert.rank}. {alert_title(alert)}", expanded=alert.rank == 1):
-                st.markdown(alert_message(alert).replace("\n", "  \n"))
+                st.html(alert_card_html(alert_title(alert), alert_facts(alert), heading=False))
 
     st.caption(
         "El puntaje de prioridad (impacto acumulado × recurrencia) es una herramienta de apoyo "
@@ -345,6 +347,7 @@ def main() -> None:
     db_path = Path(os.environ.get("PRODUCTION_INSIGHT_DB", DEFAULT_DB_PATH))
     master_dir = Path(os.environ.get("PRODUCTION_INSIGHT_MASTER_DIR", DEFAULT_MASTER_DIR))
 
+    st.html(CSS)
     st.title("Production Insight")
 
     try:
@@ -376,6 +379,7 @@ def main() -> None:
         if day:
             st.caption(f"Revisión del {format_long_date(day)}, último día hábil con datos. "
                        "Dónde investigar primero y por qué.")
+        st.html(andon_html(line_statuses(alert_report, master.lines)))
         if kpis.orphans_excluded:
             st.caption(f"{kpis.orphans_excluded} paros sin registro de producción se excluyen de los KPIs "
                        "(ver Calidad de datos).")
