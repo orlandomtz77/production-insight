@@ -20,8 +20,8 @@
 | REQ-009 | Calculate Downtime KPIs | Implemented (logic + tests; dashboard UI pending) |
 | REQ-010 | Calculate Baselines | Implemented (logic + tests; dashboard UI pending) |
 | REQ-011 | Detect Deviations | Implemented (logic + tests; dashboard UI pending) |
-| REQ-012 | Generate Explainable Alerts | Defined |
-| REQ-013 | Calculate Priority Scores | Defined |
+| REQ-012 | Generate Explainable Alerts | Implemented (logic + tests; dashboard UI pending) |
+| REQ-013 | Calculate Priority Scores | Implemented (logic + tests; dashboard UI pending) |
 | REQ-014 | Display Dashboard | Defined |
 
 Merged IDs are kept (not reused) so references stay stable.
