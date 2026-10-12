@@ -47,6 +47,7 @@ Decided 2026-10-07.
 | Element | Language |
 |---|---|
 | Documentation (requirements, ADRs, README) | English |
+| User guide for supervisors (`docs/guia-usuario.md`) | **Spanish** (its readers are the dashboard users) |
 | Source code (names, comments) | English |
 | Dashboard, messages, alerts, error detail shown to the user | **Spanish** |
 

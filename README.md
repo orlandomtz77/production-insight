@@ -69,6 +69,7 @@ tests/
 
 ## Documentation
 
+- [Guía de usuario (español)](docs/guia-usuario.md) — for supervisors
 - [Project brief](project-brief.md)
 - [Requirements](docs/requirements.md)
 - [Sample dataset design](docs/sample-dataset.md)
