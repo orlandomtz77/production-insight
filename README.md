@@ -31,7 +31,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Then, in the sidebar: load the production CSV first, then the downtime CSV.
+Then, in the sidebar: load the production file first, then the downtime file (CSV or Excel .xlsx).
 To try it with the sample data, use `data/sample/production.csv` and `data/sample/downtime.csv`.
 
 The database is created at `data/production_insight.db` (not versioned). Set

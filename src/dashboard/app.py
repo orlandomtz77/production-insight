@@ -71,11 +71,11 @@ def _upload_section(conn, master_dir) -> None:
     st.sidebar.header("Cargar datos")
     st.sidebar.caption("Primero producción, después paros.")
     uploads = [
-        ("1. Producción (CSV)", "production_file", "Cargar producción", load_production_file, "Producción"),
-        ("2. Paros (CSV)", "downtime_file", "Cargar paros", load_downtime_file, "Paros"),
+        ("1. Producción (CSV o Excel)", "production_file", "Cargar producción", load_production_file, "Producción"),
+        ("2. Paros (CSV o Excel)", "downtime_file", "Cargar paros", load_downtime_file, "Paros"),
     ]
     for label, key, button, loader, name in uploads:
-        uploaded = st.sidebar.file_uploader(label, type="csv", key=key)
+        uploaded = st.sidebar.file_uploader(label, type=["csv", "xlsx", "xls"], key=key)
         if st.sidebar.button(button, disabled=uploaded is None, width="stretch"):
             st.session_state["last_load"] = (name, loader(uploaded, uploaded.name, conn, master_dir))
             st.rerun()  # refresh "Revisar por" and every view with the new data
@@ -138,12 +138,15 @@ def _show_last_load() -> None:
                 st.markdown(f"- {message}")
             return
         st.success(f"Carga de {name.lower()} completada: {summary.file_name}")
-        cols = st.columns(5)
-        cols[0].metric("Filas leídas", format_number(summary.rows_read))
-        cols[1].metric("Filas guardadas", format_number(summary.rows_stored))
-        cols[2].metric("Filas rechazadas", format_number(summary.rows_rejected))
-        cols[3].metric("Turnos nuevos / reemplazados", f"{summary.shifts_new} / {summary.shifts_replaced}")
-        cols[4].metric("Turnos rechazados", format_number(summary.shifts_rejected))
+        # Two rows of three: labels stay readable on narrow screens.
+        rows_cols = st.columns(3)
+        rows_cols[0].metric("Filas leídas", format_number(summary.rows_read))
+        rows_cols[1].metric("Filas guardadas", format_number(summary.rows_stored))
+        rows_cols[2].metric("Filas rechazadas", format_number(summary.rows_rejected))
+        shift_cols = st.columns(3)
+        shift_cols[0].metric("Turnos nuevos", format_number(summary.shifts_new))
+        shift_cols[1].metric("Turnos reemplazados", format_number(summary.shifts_replaced))
+        shift_cols[2].metric("Turnos rechazados", format_number(summary.shifts_rejected))
         for warning in result.warnings:
             st.warning(warning)
         if result.errors:

@@ -26,6 +26,7 @@
 | REQ-015 | Review a Selected Day | Implemented; selector replaced by REQ-016 |
 | REQ-016 | Review Period: Day, Week or Month | Implemented (logic + tests; dashboard) |
 | REQ-017 | Clear All Data | Implemented (tests; dashboard) |
+| REQ-018 | Upload Excel Files | Implemented (tests; verified in browser) |
 
 Merged IDs are kept (not reused) so references stay stable.
 
@@ -1282,6 +1283,55 @@ The database keeps every upload. To analyze another dataset (another month, anot
 [ ] Master list files are unchanged.
 [ ] The dashboard shows the empty state and a message confirming the deletion.
 ```
+
+
+---
+
+## REQ-018: Upload Excel Files
+
+Decided 2026-10-12, from user request.
+
+### Problem
+
+Supervisors work in Excel. Saving every file as CSV is an extra step and a source of errors (dates and numbers change format when saved as CSV).
+
+### Input
+
+The same two uploads as REQ-001 and REQ-002, now accepting **`.csv` or `.xlsx`**. Same columns, same rules.
+
+### Process
+
+- The file type is detected from its extension.
+- **`.xlsx`**: the **first sheet** is read. If the workbook has more sheets, a warning names the sheet that was read.
+- Excel values are converted to the text that the validation already expects:
+
+| Excel cell | Converted to |
+|---|---|
+| Date (with or without time) | `YYYY-MM-DD` |
+| Whole number stored as decimal (`1250.0`) | `1250` |
+| Decimal number (`10.5`) | `10.5` (rejected by validation as not an integer) |
+| Empty cell | empty (rejected as a missing value) |
+| Text | trimmed text |
+
+- Row numbers in the error detail are the Excel row numbers (header = row 1), as for CSV.
+- **`.xls`** (Excel 97-2003) is not supported: the file is rejected with "Ábralo en Excel y guárdelo como .xlsx o .csv". It cannot be tested without a real `.xls` file; it may be added later with one.
+- Any other extension, or an `.xlsx` file that cannot be read, is rejected with a clear message.
+
+### Acceptance Criteria
+
+```text
+[ ] Production and downtime uploads accept .csv and .xlsx.
+[ ] The sample dataset saved as .xlsx (real Excel dates) loads with the same result as the CSV files.
+[ ] Excel dates, whole numbers stored as decimals and empty cells are converted as in the table above.
+[ ] A workbook with several sheets reads the first one and warns which sheet was read.
+[ ] Error detail row numbers match the Excel rows.
+[ ] A .xls file is rejected with the message to save it as .xlsx or .csv.
+[ ] A corrupt .xlsx file is rejected with a clear message.
+```
+
+### Dependencies
+
+- REQ-001, REQ-002. New library: `openpyxl` (reads `.xlsx`).
 
 ---
 

@@ -8,7 +8,7 @@ Production Insight revisa los datos de producción, scrap y paros de tus líneas
 
 ## 1. En resumen
 
-1. Prepara dos archivos CSV: **producción** y **paros**.
+1. Prepara dos archivos, en **Excel (.xlsx) o CSV**: **producción** y **paros**.
 2. Abre el dashboard y carga **primero producción, después paros**.
 3. En **Revisar por** elige día, semana o mes (por defecto, el último día con datos) y mira el **tablero de líneas**: las placas ámbar tienen alertas.
 4. Abre la pestaña **Alertas** y empieza por la **prioridad 1**.
@@ -31,7 +31,11 @@ Se abre el navegador en `http://localhost:8501`. Para cerrarlo, presiona `Ctrl +
 
 ## 3. Preparar los archivos
 
-Los archivos se guardan como **CSV** (en Excel: *Guardar como → CSV UTF-8*). La primera fila lleva los nombres de las columnas, exactamente como aparecen abajo.
+Puedes usar **Excel (.xlsx)** o **CSV**. La primera fila lleva los nombres de las columnas, exactamente como aparecen abajo.
+
+- **Excel (.xlsx):** se lee la **primera hoja**. Las fechas pueden ser fechas de Excel (con cualquier formato de celda) y los números, números normales: el sistema los convierte solo.
+- **CSV:** en Excel, *Guardar como → CSV UTF-8*. Las fechas deben ir como `AAAA-MM-DD`.
+- **.xls** (Excel 97-2003) no se acepta: ábrelo en Excel y guárdalo como .xlsx.
 
 ### Archivo de producción
 
@@ -85,8 +89,8 @@ Los paros **programados** se muestran aparte y **no generan alertas**: son tiemp
 
 En la barra lateral, **en este orden**:
 
-1. **1. Producción (CSV)** → selecciona el archivo → **Cargar producción**.
-2. **2. Paros (CSV)** → selecciona el archivo → **Cargar paros**.
+1. **1. Producción (CSV o Excel)** → selecciona el archivo → **Cargar producción**.
+2. **2. Paros (CSV o Excel)** → selecciona el archivo → **Cargar paros**.
 
 El orden importa: cada paro debe corresponder a un registro de producción. Si cargas paros antes, se rechazan.
 
@@ -111,7 +115,8 @@ Después de cargar verás:
 
 | Mensaje | Qué significa | Cómo corregirlo |
 |---|---|---|
-| Faltan columnas obligatorias | El archivo no tiene alguna columna o tiene otro nombre | Revisa la primera fila contra la sección 3 |
+| Faltan columnas obligatorias | El archivo no tiene alguna columna o tiene otro nombre | Revisa la primera fila contra la sección 3 (en Excel, de la primera hoja) |
+| Los archivos .xls no son compatibles | Formato viejo de Excel | Ábrelo en Excel y guárdalo como .xlsx |
 | Fecha inválida; el formato es AAAA-MM-DD | Fecha escrita como `30/09/2026` o una fecha que no existe | Escríbela como `2026-09-30` |
 | La fecha es posterior a hoy | Fecha futura | Revisa el año o el mes |
 | La línea / el producto / la causa no está en la lista | Valor mal escrito o nuevo | Corrige el texto o agrégalo a la lista (sección 10) |

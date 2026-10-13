@@ -12,7 +12,7 @@ from typing import Callable
 import pandas as pd
 
 from src.database.load_history_repository import LoadSummary, insert_load_history
-from src.ingestion.csv_reader import read_csv_file
+from src.ingestion.file_reader import read_table_file
 from src.ingestion.master_data import MasterDataError, MasterLists, load_master_lists
 from src.transformation.validation_common import RowError, ValidationResult
 
@@ -67,7 +67,7 @@ def load_file(
     except MasterDataError as error:
         return _reject_file(conn, file_type, file_name, 0, [str(error)], [])
 
-    read = read_csv_file(source, columns)
+    read = read_table_file(source, file_name, columns)
     if read.file_errors:
         return _reject_file(conn, file_type, file_name, read.rows_read, read.file_errors, read.warnings)
 
