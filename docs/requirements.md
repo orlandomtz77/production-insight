@@ -27,6 +27,7 @@
 | REQ-016 | Review Period: Day, Week or Month | Implemented (logic + tests; dashboard) |
 | REQ-017 | Clear All Data | Implemented (tests; dashboard) |
 | REQ-018 | Upload Excel Files | Implemented (tests; verified in browser) |
+| REQ-019 | Action Plan (Kaizen) | Implemented (tests; verified in browser) |
 
 Merged IDs are kept (not reused) so references stay stable.
 
@@ -1270,7 +1271,7 @@ The database keeps every upload. To analyze another dataset (another month, anot
 ### Process
 
 - Sidebar section **"Borrar datos"**, at the bottom.
-- Deletes **all** production records, downtime events and the load history. Master lists are not touched.
+- Deletes **all** production records, downtime events and the load history. Master lists are not touched. Action plan items (REQ-019) are kept.
 - It cannot be undone, so it requires an explicit confirmation (a checkbox) before the button is enabled.
 - One transaction: either everything is deleted or nothing is.
 - After deleting, the dashboard shows the empty state ("Cargue primero…") and a confirmation message.
@@ -1332,6 +1333,75 @@ The same two uploads as REQ-001 and REQ-002, now accepting **`.csv` or `.xlsx`**
 ### Dependencies
 
 - REQ-001, REQ-002. New library: `openpyxl` (reads `.xlsx`).
+
+
+---
+
+## REQ-019: Action Plan (Kaizen)
+
+Decided 2026-10-12, from user request.
+
+### Problem
+
+Alerts tell the supervisor where to investigate, but the follow-up (who does what, by when, and whether it worked) lives outside the system. Without it, the cycle stops at "decision" and never reaches "action", and recurring problems are re-discovered instead of tracked.
+
+Scope note: this goes beyond the original MVP (`CLAUDE.md` §6). It is added after the MVP was used, to close the loop data → information → decision → action.
+
+### Action fields
+
+| Field | Rule |
+|---|---|
+| Problema | Required text |
+| Línea | Required; must exist in `lines.csv` |
+| Acción (contramedida) | Required text |
+| Responsable | Required text (the system has no user accounts) |
+| Fecha compromiso | Required date |
+| Prioridad | Alta / Media / Baja |
+| Etapa | Abierta → En proceso → En revisión → Terminada |
+| Alerta de origen | Optional: date + line + metric of the alert it came from |
+
+The system also records creation date, last update and the date the action reached "Terminada".
+
+### Stages
+
+| Stage | Meaning |
+|---|---|
+| Abierta | Registered, not started |
+| En proceso | The countermeasure is being implemented |
+| En revisión | Implemented; checking whether it worked |
+| Terminada | Confirmed |
+
+Any stage can be changed to any other (e.g., back from "En revisión" to "En proceso" if the countermeasure did not work).
+
+An action is **vencida** (overdue) when its due date has passed and it is not "Terminada". Overdue is shown with an icon and a label, never color alone.
+
+### Creating actions
+
+1. **From an alert:** each alert in the Alertas tab has "Crear acción". Problem, line and alert link are filled from the alert; the supervisor adds the countermeasure, owner and due date. Default priority: Alta for alert ranks 1–3, Media otherwise. An alert can have only one action; if it already has one, its number and stage are shown instead.
+2. **Manual:** a form in the "Plan de acción" tab, for actions that do not come from an alert (e.g., an audit finding).
+
+### "Plan de acción" tab
+
+- **Board by stage:** one column per stage with its count; each card shows problem, line, owner, due date and priority; overdue cards are marked. Cards sorted by due date.
+- **Editable table:** change stage, owner, due date, priority, problem or countermeasure, then "Guardar cambios". Invalid rows are rejected with the reason; valid rows are saved.
+- The **line filter** applies; the review period does not (an action stays visible until it is finished, whatever the period).
+
+### Storage
+
+Table `action_items` in SQLite. "Borrar datos" (REQ-017) does **not** delete actions: they are the team's work, not uploaded data.
+
+### Acceptance Criteria
+
+```text
+[ ] An action can be created manually with all required fields; missing or invalid fields are rejected with a reason.
+[ ] An action can be created from an alert, with problem, line and alert link prefilled.
+[ ] An alert with an existing action shows that action instead of creating a second one.
+[ ] The board shows four columns with counts; cards sorted by due date; overdue cards marked with icon and label.
+[ ] Stage, owner, due date, priority, problem and countermeasure can be edited and saved.
+[ ] Moving to "Terminada" records the closing date; moving out of it clears the date.
+[ ] The line filter applies to the plan; the review period does not.
+[ ] "Borrar datos" keeps the actions.
+```
 
 ---
 

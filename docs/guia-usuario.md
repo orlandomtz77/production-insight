@@ -13,6 +13,7 @@ Production Insight revisa los datos de producción, scrap y paros de tus líneas
 3. En **Revisar por** elige día, semana o mes (por defecto, el último día con datos) y mira el **tablero de líneas**: las placas ámbar tienen alertas.
 4. Abre la pestaña **Alertas** y empieza por la **prioridad 1**.
 5. Revisa **Dónde investigar** en la ficha de la alerta y ve al piso.
+6. Registra la contramedida con **Crear acción** y dale seguimiento en **Plan de acción**.
 
 ---
 
@@ -119,7 +120,7 @@ Después de cargar verás:
 | Los archivos .xls no son compatibles | Formato viejo de Excel | Ábrelo en Excel y guárdalo como .xlsx |
 | Fecha inválida; el formato es AAAA-MM-DD | Fecha escrita como `30/09/2026` o una fecha que no existe | Escríbela como `2026-09-30` |
 | La fecha es posterior a hoy | Fecha futura | Revisa el año o el mes |
-| La línea / el producto / la causa no está en la lista | Valor mal escrito o nuevo | Corrige el texto o agrégalo a la lista (sección 10) |
+| La línea / el producto / la causa no está en la lista | Valor mal escrito o nuevo | Corrige el texto o agrégalo a la lista (sección 11) |
 | Turno inválido; debe ser 1, 2 o 3 | Turno fuera de rango | Corrige el número |
 | El scrap es mayor que la producción | El scrap supera las piezas procesadas | Revisa ambos números |
 | Registro duplicado en el archivo | Dos filas con la misma fecha, línea, turno y producto | Deja una sola fila con el total |
@@ -222,6 +223,7 @@ Un problema que **se repite** sube de prioridad, porque probablemente sigue acti
    - **Calidad → mapa de calor por turno y semana**: ¿es siempre el mismo turno?
    - **Paros → causas de paro**: ¿qué causa domina?
 4. Ve al piso con esa pista concreta.
+5. Registra lo que vas a hacer con **Crear acción** (sección 10).
 
 ---
 
@@ -231,6 +233,7 @@ Un problema que **se repite** sube de prioridad, porque probablemente sigue acti
 |---|---|
 | **Resumen** | ¿Cuál es el problema más importante del periodo? ¿Qué pasó en el periodo? |
 | **Alertas** | ¿Qué investigo primero? ¿Por qué se marcó? ¿Falta algo en la evaluación? |
+| **Plan de acción** | ¿Qué acciones hay, quién las tiene y en qué etapa están? |
 | **Producción** | ¿Qué línea, producto o turno produjo más o menos? |
 | **Calidad** | ¿Dónde está el scrap? ¿Está empeorando? ¿Está siempre en el mismo turno? |
 | **Paros** | ¿Cuánto paro es pérdida real? ¿Cuáles son las causas principales? ¿Está aumentando? |
@@ -240,7 +243,37 @@ En las gráficas de tendencia puedes agrupar por **día, semana o mes** con el s
 
 ---
 
-## 10. Mantener las listas
+## 10. Plan de acción
+
+El plan de acción da seguimiento a lo que el equipo decidió hacer: **qué** se hará, **quién** lo hará y **para cuándo**.
+
+### Crear una acción
+
+- **Desde una alerta:** en la pestaña **Alertas**, abre la alerta y llena *Crear acción para esta alerta*. El problema y la línea ya vienen llenos; agrega la contramedida, el responsable y la fecha compromiso. La prioridad sugerida es **Alta** para las alertas 1 a 3. Cada alerta tiene una sola acción: si ya existe, verás su número y etapa.
+- **Manual:** en **Plan de acción → Nueva acción**, para acciones que no vienen de una alerta (por ejemplo, un hallazgo de auditoría).
+
+### Etapas
+
+| Etapa | Significado |
+|---|---|
+| **Abierta** | Registrada, sin empezar |
+| **En proceso** | Se está implementando la contramedida |
+| **En revisión** | Ya se implementó; se verifica si funcionó |
+| **Terminada** | Se confirmó que funcionó |
+
+Si la contramedida no funcionó, regrésala de *En revisión* a *En proceso*.
+
+### Dar seguimiento
+
+- El **tablero** muestra una columna por etapa, con el número de acciones. Las tarjetas van ordenadas por fecha compromiso.
+- **▲ Vencida:** la fecha compromiso ya pasó y la acción no está terminada.
+- Para cambiar la etapa, el responsable, la fecha u otro dato, edítalo en la tabla de abajo y presiona **Guardar cambios**.
+- El plan muestra **todas** las acciones, sin importar el periodo de *Revisar por*. El filtro de **línea** sí aplica.
+- **Borrar datos** no borra las acciones: son el trabajo del equipo, no datos cargados.
+
+---
+
+## 11. Mantener las listas
 
 Las listas viven en archivos CSV en `data/master/`. Se editan con Excel o un editor de texto.
 
@@ -267,7 +300,7 @@ Si dejas el turno vacío, aplica a **todo el día**.
 
 ---
 
-## 11. Preguntas frecuentes
+## 12. Preguntas frecuentes
 
 **¿Por qué una línea dice "Sin evaluar"?**
 Necesita al menos 10 días hábiles de historia para saber qué es normal. Con menos, no se generan alertas para esa línea.

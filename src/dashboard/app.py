@@ -1,4 +1,4 @@
-"""Streamlit dashboard (REQ-014, REQ-016, REQ-017). All text shown to the user is in Spanish.
+"""Streamlit dashboard (REQ-014, REQ-016, REQ-017, REQ-019). All text shown to the user is in Spanish.
 
 Each visualization is introduced by the question it answers (CLAUDE.md §15).
 The dashboard only displays results; every calculation lives in src/analytics
@@ -6,11 +6,13 @@ and src/anomaly_detection, where it is tested.
 """
 
 import os
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
+from src.action_plan.model import PRIORITIES, STAGES, ActionItem, alert_key, default_priority, validate_action
 from src.analytics.data_quality import build_data_quality_report
 from src.analytics.kpis import (
     KpiFilters,
@@ -24,11 +26,14 @@ from src.analytics.periods import ReviewPeriod, available_periods, trend_grain
 from src.anomaly_detection.alerts import run_alerts_for_period
 from src.anomaly_detection.baselines import METRICS
 from src.dashboard import charts
+from src.dashboard.action_board import board_html
 from src.dashboard.andon import alert_card_html, andon_html, line_statuses
 from src.dashboard.styles import CSS
 from src.dashboard.formatting import (
     GRAIN_LABELS,
     NOT_EVALUATED_REASONS,
+    PRIORITY_LABELS,
+    STAGE_LABELS,
     alert_facts,
     alert_title,
     format_metric_value,
@@ -39,7 +44,7 @@ from src.dashboard.formatting import (
     period_label,
     period_phrase,
 )
-from src.database import downtime_repository, production_repository
+from src.database import action_repository, downtime_repository, production_repository
 from src.database.connection import DEFAULT_DB_PATH, connect
 from src.database.maintenance import clear_all_data
 from src.ingestion.load_downtime import load_downtime_file
@@ -50,6 +55,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MASTER_DIR = PROJECT_ROOT / "data" / "master"
 METRIC_LABELS = {metric.name: metric.label for metric in METRICS}
 NO_DATA = "Cargue primero el CSV de producción y después el CSV de paros (barra lateral)."
+DEFAULT_DUE_DAYS = 7  # default due date for a new action
+
 
 
 def _theme_mode() -> str:
@@ -194,7 +201,45 @@ def _tab_summary(kpis, alert_report, phrase: str) -> None:
                    help=format_minutes(kpis.downtime.unplanned_total))
 
 
-def _tab_alerts(alert_report, filters: KpiFilters, phrase: str) -> None:
+def _now() -> str:
+    return datetime.now().isoformat(sep=" ", timespec="seconds")
+
+
+def _alert_action(conn, alert, lines) -> None:
+    """REQ-019: create the action for an alert, or show the one that already exists."""
+    key = alert_key(alert.evaluated_day, alert.line, alert.metric)
+    existing = action_repository.action_for_alert(conn, key)
+    if existing:
+        action_id, stage = existing
+        st.caption(f"Acción #{action_id} ({STAGE_LABELS[stage]}). Se sigue en la pestaña Plan de acción.")
+        return
+    with st.form(f"action_form_{key}"):
+        st.markdown("**Crear acción para esta alerta**")
+        problem = st.text_input("Problema", value=alert_title(alert), key=f"problem_{key}")
+        action = st.text_area("Acción (contramedida)", key=f"action_{key}", height=80)
+        left, middle, right = st.columns(3)
+        owner = left.text_input("Responsable", key=f"owner_{key}")
+        due = middle.date_input("Fecha compromiso", value=date.today() + timedelta(days=DEFAULT_DUE_DAYS),
+                                key=f"due_{key}")
+        priority = right.selectbox("Prioridad", PRIORITIES, index=PRIORITIES.index(default_priority(alert.rank)),
+                                   format_func=PRIORITY_LABELS.get, key=f"priority_{key}")
+        if st.form_submit_button("Crear acción", key=f"submit_{key}"):
+            item = ActionItem(problem, alert.line, action, owner, due, priority, source_alert=key)
+            _save_new_action(conn, item, lines)
+
+
+def _save_new_action(conn, item: ActionItem, lines) -> None:
+    errors = validate_action(item, lines)
+    if errors:
+        for error in errors:
+            st.error(error)
+        return
+    action_id = action_repository.create_action(conn, item, _now())
+    st.session_state["action_created"] = action_id
+    st.rerun()
+
+
+def _tab_alerts(alert_report, filters: KpiFilters, phrase: str, conn, lines) -> None:
     st.caption(
         f"Alertas {phrase}: se evalúa cada día hábil del periodo contra los días anteriores. "
         "El periodo se cambia en \"Revisar por\"; el filtro de línea también aplica."
@@ -227,6 +272,7 @@ def _tab_alerts(alert_report, filters: KpiFilters, phrase: str) -> None:
         for alert in alerts:
             with st.expander(f"{alert.rank}. {alert_title(alert)}", expanded=alert.rank == 1):
                 st.html(alert_card_html(alert_title(alert), alert_facts(alert), heading=False))
+                _alert_action(conn, alert, lines)
 
     st.caption(
         "El puntaje de prioridad (impacto acumulado × recurrencia) es una herramienta de apoyo "
@@ -247,6 +293,86 @@ def _tab_alerts(alert_report, filters: KpiFilters, phrase: str) -> None:
         )
     else:
         st.caption("Todas las líneas y métricas fueron evaluadas.")
+
+
+def _tab_action_plan(conn, master, filters: KpiFilters) -> None:
+    """REQ-019: kaizen action plan. The review period does not apply; the line filter does."""
+    actions = action_repository.list_actions(conn)
+    if filters.lines is not None:
+        actions = actions[actions["line"].isin(filters.lines)]
+
+    _question("¿Qué acciones hay y en qué etapa están?")
+    st.caption("Todas las acciones, sin importar el periodo revisado. El filtro de línea sí aplica.")
+    if actions.empty:
+        st.info("Todavía no hay acciones. Créalas desde una alerta (pestaña Alertas) o con Nueva acción.")
+    else:
+        st.html(board_html(actions, date.today()))
+
+    with st.expander("Nueva acción", expanded=actions.empty):
+        with st.form("new_action_form", clear_on_submit=False):
+            problem = st.text_input("Problema", key="new_problem")
+            action = st.text_area("Acción (contramedida)", key="new_action", height=80)
+            left, middle, right, last = st.columns(4)
+            line = left.selectbox("Línea", sorted(master.lines), key="new_line")
+            owner = middle.text_input("Responsable", key="new_owner")
+            due = right.date_input("Fecha compromiso", value=date.today() + timedelta(days=DEFAULT_DUE_DAYS),
+                                   key="new_due")
+            priority = last.selectbox("Prioridad", PRIORITIES, index=1, format_func=PRIORITY_LABELS.get,
+                                      key="new_priority")
+            if st.form_submit_button("Crear acción", key="new_submit"):
+                _save_new_action(conn, ActionItem(problem, line, action, owner, due, priority), master.lines)
+
+    if actions.empty:
+        return
+    _question("¿Qué cambió?")
+    st.caption("Edita la etapa, el responsable, la fecha u otro campo y presiona Guardar cambios.")
+    stage_by_label = {label: code for code, label in STAGE_LABELS.items()}
+    priority_by_label = {label: code for code, label in PRIORITY_LABELS.items()}
+    # Most edited columns first; the long countermeasure text last.
+    table = pd.DataFrame({
+        "#": actions["id"].astype(int),
+        "Etapa": actions["stage"].map(STAGE_LABELS),
+        "Problema": actions["problem"],
+        "Responsable": actions["owner"],
+        "Fecha compromiso": actions["due_date"].map(date.fromisoformat),
+        "Prioridad": actions["priority"].map(PRIORITY_LABELS),
+        "Línea": actions["line"],
+        "Acción": actions["action"],
+    })
+    edited = st.data_editor(
+        table, hide_index=True, width="stretch", key="actions_editor", disabled=["#"],
+        column_config={
+            "Línea": st.column_config.SelectboxColumn(options=sorted(master.lines), required=True),
+            "Prioridad": st.column_config.SelectboxColumn(options=[PRIORITY_LABELS[p] for p in PRIORITIES],
+                                                          required=True),
+            "Etapa": st.column_config.SelectboxColumn(options=[STAGE_LABELS[s] for s in STAGES], required=True),
+            "Fecha compromiso": st.column_config.DateColumn(format="DD/MM/YYYY", required=True),
+        },
+    )
+    if st.button("Guardar cambios", key="save_actions"):
+        saved, problems = 0, []
+        for (_, before), (_, after) in zip(table.iterrows(), edited.iterrows()):
+            # Compare as text: dtypes may differ (3 vs 3.0) for rows nobody touched.
+            if all(str(before[column]) == str(after[column]) for column in table.columns):
+                continue
+            item = ActionItem(
+                id=int(after["#"]), problem=str(after["Problema"] or ""), line=after["Línea"],
+                action=str(after["Acción"] or ""), owner=str(after["Responsable"] or ""),
+                due_date=after["Fecha compromiso"], priority=priority_by_label.get(after["Prioridad"], ""),
+                stage=stage_by_label.get(after["Etapa"], ""),
+            )
+            errors = validate_action(item, master.lines)
+            if errors:
+                problems.append(f"#{item.id}: {' '.join(errors)}")
+                continue
+            action_repository.update_action(conn, item, _now())
+            saved += 1
+        for problem in problems:
+            st.error(problem)
+        if saved and not problems:
+            st.rerun()
+        if saved:
+            st.success(f"{saved} acciones guardadas.")
 
 
 def _tab_production(kpis, mode) -> None:
@@ -423,6 +549,9 @@ def main() -> None:
         if st.session_state.pop("data_cleared", False):
             st.success("Se borraron todos los datos. Ya puedes cargar otros archivos.")
         _show_last_load()
+        if "action_created" in st.session_state:
+            st.success(f"Acción #{st.session_state.pop('action_created')} creada. "
+                       "Se sigue en la pestaña Plan de acción.")
 
         if period is None:
             st.info(NO_DATA)
@@ -446,24 +575,28 @@ def main() -> None:
             st.caption(f"{kpis.orphans_excluded} paros sin registro de producción se excluyen de los KPIs "
                        "(ver Calidad de datos).")
 
-        tabs = st.tabs(["Resumen", "Alertas", "Producción", "Calidad", "Paros", "Calidad de datos"])
-        with tabs[5]:
+        (tab_summary, tab_alerts, tab_plan, tab_production, tab_quality, tab_downtime,
+         tab_data) = st.tabs(["Resumen", "Alertas", "Plan de acción", "Producción", "Calidad", "Paros",
+                              "Calidad de datos"])
+        with tab_data:
             _tab_data_quality(quality_report)
-        with tabs[1]:
-            _tab_alerts(alert_report, filters, phrase)
-        with tabs[0]:
+        with tab_alerts:
+            _tab_alerts(alert_report, filters, phrase, conn, master.lines)
+        with tab_plan:
+            _tab_action_plan(conn, master, filters)
+        with tab_summary:
             _tab_summary(kpis, alert_report, phrase)
         if not kpis.has_data:
-            for tab in (tabs[2], tabs[3], tabs[4]):
+            for tab in (tab_production, tab_quality, tab_downtime):
                 tab.info("No hay datos en este periodo para estos filtros.")
             return
-        with tabs[2]:
+        with tab_production:
             _period_caption(phrase)
             _tab_production(kpis, mode)
-        with tabs[3]:
+        with tab_quality:
             _period_caption(phrase)
             _tab_quality(kpis, production_rows, colors, grain, mode)
-        with tabs[4]:
+        with tab_downtime:
             _period_caption(phrase)
             _tab_downtime(kpis, production_rows, events, master.planned_reasons, colors, grain, mode)
     finally:

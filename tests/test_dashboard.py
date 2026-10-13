@@ -52,7 +52,7 @@ def test_dashboard_with_sample_data(loaded_db, monkeypatch):
 
     assert not app.exception
     assert [tab.label for tab in app.tabs] == [
-        "Resumen", "Alertas", "Producción", "Calidad", "Paros", "Calidad de datos"
+        "Resumen", "Alertas", "Plan de acción", "Producción", "Calidad", "Paros", "Calidad de datos"
     ]
     metrics = {metric.label: metric.value for metric in app.metric}
     assert metrics["Scrap rate"] == "4.4%"  # default period: day 2026-09-30
@@ -141,3 +141,49 @@ def test_clear_all_data_requires_confirmation(loaded_db, monkeypatch):
     assert not app.exception
     assert any("Se borraron todos los datos" in s.value for s in app.success)
     assert any("Cargue primero" in info.value for info in app.info)
+
+
+
+# --- Action plan (REQ-019) ---------------------------------------------------------
+
+def test_empty_plan_invites_to_create_actions(loaded_db, monkeypatch):
+    app = run_app(loaded_db, monkeypatch)
+
+    assert any("Todavía no hay acciones" in info.value for info in app.info)
+
+
+def test_create_manual_action(loaded_db, monkeypatch):
+    app = run_app(loaded_db, monkeypatch)
+
+    app.text_input(key="new_problem").input("Fuga de aire en L3")
+    app.text_area(key="new_action").input("Cambiar conexiones de la estación 4")
+    app.selectbox(key="new_line").set_value("L3")
+    app.text_input(key="new_owner").input("Luis")
+    app.button(key="new_submit").click().run()
+
+    assert not app.exception
+    assert any("Acción #1 creada" in s.value for s in app.success)
+    assert any("Fuga de aire en L3" in h.proto.body for h in app.get("html"))
+
+
+def test_manual_action_without_owner_is_rejected(loaded_db, monkeypatch):
+    app = run_app(loaded_db, monkeypatch)
+
+    app.text_input(key="new_problem").input("Fuga de aire")
+    app.text_area(key="new_action").input("Revisar")
+    app.button(key="new_submit").click().run()
+
+    assert any("Falta el responsable" in e.value for e in app.error)
+
+
+def test_create_action_from_alert_once(loaded_db, monkeypatch):
+    app = run_app(loaded_db, monkeypatch)
+    key = "2026-09-30|L2|scrap_rate"
+
+    app.text_area(key=f"action_{key}").input("Revisar molde del Producto C")
+    app.text_input(key=f"owner_{key}").input("Ana")
+    app.button(key=f"submit_{key}").click().run()
+
+    assert not app.exception
+    assert any("Acción #1 creada" in s.value for s in app.success)
+    assert any("Acción #1 (Abierta)" in c.value for c in app.caption)  # no second form for this alert

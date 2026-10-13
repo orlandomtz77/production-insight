@@ -88,10 +88,53 @@ CSS = """
 .alert-card .alert-focus { grid-column: 1 / -1; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--hairline); }
 .alert-card .alert-focus strong { font-weight: 600; }
 
+/* Action plan board (REQ-019): one column per stage. */
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.kanban-column {
+  background: #E3E8EC;
+  border-radius: 4px;
+  padding: 10px;
+  min-height: 120px;
+}
+.kanban-column h4 {
+  font-family: var(--condensed);
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin: 0 0 8px;
+  padding: 0;
+  color: var(--graphite);
+  display: flex;
+  justify-content: space-between;
+}
+.kanban-count { color: var(--steel); font-weight: 600; }
+.kanban-card {
+  background: var(--plate);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.kanban-card-overdue { border-left: 6px solid var(--andon-amber); }
+.kanban-id { color: var(--steel); font-size: 0.8rem; }
+.kanban-problem { font-weight: 600; color: var(--graphite); margin: 2px 0 4px; line-height: 1.25; }
+.kanban-meta { color: var(--steel); font-size: 0.88rem; }
+.kanban-overdue { color: #8A5A00; font-weight: 600; margin-left: 4px; }
+.kanban-empty { color: var(--steel); font-size: 0.88rem; padding: 6px 2px; }
+
+@media (max-width: 900px) {
+  .kanban-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 @media (max-width: 640px) {
   .alert-card dl { grid-template-columns: 1fr; gap: 2px; }
   .alert-card dd { margin-bottom: 6px; }
   .andon-line { font-size: 2.2rem; }
+  .kanban-board { grid-template-columns: 1fr; }
 }
 </style>
 """

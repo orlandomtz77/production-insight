@@ -40,3 +40,19 @@ CREATE TABLE IF NOT EXISTS load_history (
     warnings        INTEGER NOT NULL,
     status          TEXT    NOT NULL CHECK (status IN ('completed', 'rejected'))
 );
+
+-- Action plan (REQ-019). Not deleted by "Borrar datos" (REQ-017).
+CREATE TABLE IF NOT EXISTS action_items (
+    id           INTEGER PRIMARY KEY,
+    problem      TEXT    NOT NULL,
+    line         TEXT    NOT NULL,
+    action       TEXT    NOT NULL,
+    owner        TEXT    NOT NULL,
+    due_date     TEXT    NOT NULL,             -- ISO 'YYYY-MM-DD'
+    priority     TEXT    NOT NULL CHECK (priority IN ('high', 'medium', 'low')),
+    stage        TEXT    NOT NULL CHECK (stage IN ('open', 'in_progress', 'in_review', 'done')),
+    source_alert TEXT    UNIQUE,               -- 'date|line|metric'; NULL for manual actions
+    created_at   TEXT    NOT NULL,
+    updated_at   TEXT    NOT NULL,
+    closed_at    TEXT                          -- set when the action reaches 'done'
+);

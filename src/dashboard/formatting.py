@@ -151,3 +151,7 @@ def period_phrase(period) -> str:
     if period.grain == "week":
         return f"de la semana {format_date_range(period.start, period.end)}"
     return f"de {MONTH_NAMES[period.start.month - 1]} de {period.start.year}"
+
+
+STAGE_LABELS = {"open": "Abierta", "in_progress": "En proceso", "in_review": "En revisión", "done": "Terminada"}
+PRIORITY_LABELS = {"high": "Alta", "medium": "Media", "low": "Baja"}
